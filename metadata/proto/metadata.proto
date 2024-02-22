@@ -21,6 +21,7 @@ service Metadata {
     rpc CreateLabelVariant(LabelVariant) returns (Empty);
     rpc CreateTrainingSetVariant(TrainingSetVariant) returns (Empty);
     rpc CreateModel(Model) returns (Empty);
+    rpc CreateTrigger(Trigger) returns (Empty);
     rpc RequestScheduleChange(ScheduleChangeRequest) returns (Empty);
 
     rpc GetUsers(stream Name) returns (stream User);
@@ -52,6 +53,11 @@ service Metadata {
     rpc ListModels(Empty) returns (stream Model);
 
     rpc SetResourceStatus(SetStatusRequest) returns (Empty);
+
+    rpc AddTrigger(TriggerRequest) returns (Empty);
+    rpc RemoveTrigger(TriggerRequest) returns (Empty);
+    rpc UpdateTrigger(Trigger) returns (Empty);
+    rpc DeleteTrigger(Trigger) returns (Empty);
 }
 
 service Api {
@@ -63,6 +69,7 @@ service Api {
     rpc CreateLabelVariant(LabelVariant) returns (Empty);
     rpc CreateTrainingSetVariant(TrainingSetVariant) returns (Empty);
     rpc CreateModel(Model) returns (Empty);
+    rpc CreateTrigger(Trigger) returns (Empty);
     rpc RequestScheduleChange(ScheduleChangeRequest) returns (Empty);
 
     rpc GetUsers(stream Name) returns (stream User);
@@ -91,6 +98,11 @@ service Api {
     rpc ListProviders(Empty) returns (stream Provider);
     rpc ListEntities(Empty) returns (stream Entity);
     rpc ListModels(Empty) returns (stream Model);
+
+    rpc AddTrigger(TriggerRequest) returns (Empty);
+    rpc RemoveTrigger(TriggerRequest) returns (Empty);
+    rpc UpdateTrigger(Trigger) returns (Empty);
+    rpc DeleteTrigger(Trigger) returns (Empty);
 }
 
 message Name {
@@ -138,6 +150,7 @@ enum ResourceType {
     ENTITY = 9;
     MODEL = 10;
     USER = 11;
+    TRIGGER = 12;
 }
 
 message ResourceID {
@@ -217,6 +230,7 @@ message FeatureVariant {
     bool is_embedding = 19;
     int32 dimension = 20;
     FeatureParameters additional_parameters = 21;
+    Trigger trigger = 22;
 }
 
 message FeatureParameters {
@@ -304,6 +318,7 @@ message TrainingSetVariant {
     repeated FeatureLag feature_lags = 15;
     Tags tags = 16;
     Properties properties = 17;
+    Trigger trigger = 18;
 }
 
 message Entity {
@@ -422,4 +437,22 @@ message Property {
 
 message Properties {
     map<string, Property> property = 1;
+}
+
+message Trigger {
+	string name = 1;
+	oneof trigger {
+		ScheduleTrigger schedule_trigger = 2;
+	}
+	repeated string job_ids = 3;
+	repeated string task_ids = 4;
+}
+
+message ScheduleTrigger {
+	string schedule = 2;
+}
+
+message TriggerRequest {
+	Trigger trigger = 1;
+	NameVariant resource = 2;
 }
