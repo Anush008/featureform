@@ -1288,6 +1288,37 @@ class ResourceColumnMapping:
 
 ResourceLocation = ResourceColumnMapping
 
+@typechecked
+@dataclass
+class TriggerResource:
+    name: str
+    trigger_type: str
+    job_ids: list = field(default_factory=list)
+    task_ids: list = field(default_factory=list)
+
+    @staticmethod
+    def operation_type() -> OperationType:
+        return OperationType.CREATE
+
+    def type(self) -> str:
+        return "trigger"
+
+    def _create(self, stub) -> None:
+        serialized = pb.Trigger(
+            name=self.name,
+            schedule_trigger=pb.ScheduleTrigger(schedule = self.trigger_type),
+                job_ids=self.job_ids,
+                task_ids=self.task_ids
+            )
+        stub.CreateTrigger(serialized)
+
+    def to_dictionary(self):
+        return {
+            "name": self.name,
+            "trigger": self.trigger_type,
+            "job_ids": self.job_ids,
+            "task_ids": self.task_ids,
+        }
 
 @typechecked
 @dataclass
@@ -1350,6 +1381,7 @@ class FeatureVariant(ResourceVariant):
     error: Optional[str] = None
     additional_parameters: Optional[Additional_Parameters] = None
     server_status: Optional[ServerStatus] = None
+    trigger: TriggerResource = None
 
     def __post_init__(self):
         col_types = [member.value for member in ScalarType]
@@ -1378,7 +1410,6 @@ class FeatureVariant(ResourceVariant):
     def get(self, stub) -> "FeatureVariant":
         name_variant = pb.NameVariant(name=self.name, variant=self.variant)
         feature = next(stub.GetFeatureVariants(iter([name_variant])))
-
         return FeatureVariant(
             created=None,
             name=feature.name,
@@ -1398,11 +1429,18 @@ class FeatureVariant(ResourceVariant):
             error=feature.status.error_message,
             server_status=ServerStatus.from_proto(feature.status),
             additional_parameters=None,
-        )
+            trigger=TriggerResource(name=feature.trigger.name,trigger_type=str(feature.trigger.schedule_trigger),job_ids=list(feature.trigger.job_ids),task_ids=list(feature.trigger.task_ids)))
 
     def _create(self, stub) -> Optional[str]:
         if hasattr(self.source, "name_variant"):
             self.source = self.source.name_variant()
+
+        if self.trigger is None:
+            trig = None
+        else:
+            schedule_trigger = pb.ScheduleTrigger()
+            schedule_trigger.schedule = self.trigger.trigger_type
+            trig = pb.Trigger(name=self.trigger.name, schedule_trigger=schedule_trigger, job_ids=self.trigger.job_ids, task_ids=self.trigger.task_ids)
 
         serialized = pb.FeatureVariant(
             name=self.name,
@@ -1425,6 +1463,7 @@ class FeatureVariant(ResourceVariant):
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
             additional_parameters=None,
+            trigger=trig
         )
         _get_and_set_equivalent_variant(serialized, "feature_variant", stub)
         stub.CreateFeatureVariant(serialized)
@@ -1519,6 +1558,7 @@ class OnDemandFeatureVariant(ResourceVariant):
 
     def is_ready(self):
         return self.status == ResourceStatus.READY.value
+
 
 
 @typechecked
@@ -1877,6 +1917,7 @@ Resource = Union[
     EntityReference,
     Model,
     OnDemandFeatureVariant,
+    TriggerResource,
 ]
 
 
@@ -1936,6 +1977,7 @@ class ResourceState:
             "training-set": 7,
             "schedule": 8,
             "model": 9,
+            "trigger": 10,
         }
 
         def to_sort_key(res):
@@ -1985,27 +2027,6 @@ class ResourceState:
                     continue
 
                 raise e
-            
-
-class TriggerResource:
-    def __init__(
-        self,
-        name: str,
-        type: str,
-    ):
-        self.trigger_name = name
-        self.type = type
-        self.job_ids = []
-        self.task_ids = []
-        # Return an object
-
-    def register(self):
-        # TODO: Implement this
-        return self
-        
-    def name(self):
-        return self.trigger_name
-
 
 ## Executor Providers
 @typechecked
