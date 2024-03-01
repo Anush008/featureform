@@ -221,6 +221,7 @@ type ResourceLookup interface {
 	SetJob(ResourceID, string) error
 	SetStatus(ResourceID, pb.ResourceStatus) error
 	SetSchedule(ResourceID, string) error
+	Delete(ResourceID) error
 }
 
 type SearchWrapper struct {
@@ -345,6 +346,18 @@ func (lookup LocalResourceLookup) SetSchedule(id ResourceID, schedule string) er
 
 func (lookup LocalResourceLookup) HasJob(id ResourceID) (bool, error) {
 	return false, nil
+}
+
+func (lookup LocalResourceLookup) Delete(id ResourceID) error {
+	has, err := lookup.Has(id)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return &ResourceNotFoundError{id, nil}
+	}
+	delete(lookup, id)
+	return nil
 }
 
 type SourceResource struct {
@@ -1877,11 +1890,11 @@ func (serv *MetadataServer) UpdateTrigger(ctx context.Context, t *pb.Trigger) (*
 }
 
 func (serv *MetadataServer) DeleteTrigger(ctx context.Context, trigger *pb.Trigger) (*pb.Empty, error) {
-	// triggerResID := ResourceID{Name: trigger.Name, Type: TRIGGER}
-	// err := serv.lookup.Delete(triggerResID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	triggerResID := ResourceID{Name: trigger.Name, Type: TRIGGER}
+	err := serv.lookup.Delete(triggerResID)
+	if err != nil {
+		return nil, err
+	}
 	return &pb.Empty{}, nil
 }
 
