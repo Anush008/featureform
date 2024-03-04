@@ -3995,6 +3995,7 @@ class Registrar:
         schedule: str = "",
         tags: List[str] = [],
         properties: dict = {},
+        trigger: TriggerResource = None,
     ):
         """Register a training set.
 
@@ -4018,6 +4019,7 @@ class Registrar:
             schedule (str): Kubernetes CronJob schedule string ("* * * * *")
             tags (List[str]): Optional grouping mechanism for resources
             properties (dict): Optional grouping mechanism for resources
+            trigger (TriggerResource): Trigger
 
         Returns:
             resource (ResourceRegistrar): resource
@@ -4077,6 +4079,7 @@ class Registrar:
             feature_lags=feature_lags,
             tags=tags,
             properties=properties,
+            trigger=trigger,
         )
         self.__resources.append(resource)
         return resource

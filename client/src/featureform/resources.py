@@ -1770,6 +1770,7 @@ class TrainingSetVariant(ResourceVariant):
     status: str = "NO_STATUS"
     error: Optional[str] = None
     server_status: Optional[ServerStatus] = None
+    trigger: TriggerResource = None
 
     def update_schedule(self, schedule) -> None:
         self.schedule_obj = Schedule(
@@ -1822,7 +1823,7 @@ class TrainingSetVariant(ResourceVariant):
             properties={k: v for k, v in ts.properties.property.items()},
             error=ts.status.error_message,
             server_status=ServerStatus.from_proto(ts.status),
-        )
+            trigger=TriggerResource(name=ts.trigger.name,trigger_type=str(ts.trigger.schedule_trigger),job_ids=list(ts.trigger.job_ids),task_ids=list(ts.trigger.task_ids)))
 
     def _create(self, stub) -> Optional[str]:
         feature_lags = []
@@ -1844,6 +1845,13 @@ class TrainingSetVariant(ResourceVariant):
         if hasattr(self.label, "name_variant"):
             self.label = self.label.name_variant()
 
+        if self.trigger is None:
+            trig = None
+        else:
+            schedule_trigger = pb.ScheduleTrigger()
+            schedule_trigger.schedule = self.trigger.trigger_type
+            trig = pb.Trigger(name=self.trigger.name, schedule_trigger=schedule_trigger, job_ids=self.trigger.job_ids, task_ids=self.trigger.task_ids)
+
         serialized = pb.TrainingSetVariant(
             created=None,
             name=self.name,
@@ -1857,6 +1865,7 @@ class TrainingSetVariant(ResourceVariant):
             tags=pb.Tags(tag=self.tags),
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
+            trigger=trig
         )
         _get_and_set_equivalent_variant(serialized, "training_set_variant", stub)
         stub.CreateTrainingSetVariant(serialized)
