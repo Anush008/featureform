@@ -1203,6 +1203,39 @@ func (client *Client) parseModelStream(stream modelStream) ([]*Model, error) {
 	return models, nil
 }
 
+func (client *Client) ListTriggers(ctx context.Context) ([]*Trigger, error) {
+	stream, err := client.GrpcConn.ListTriggers(ctx, &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	return client.parseTriggerStream(stream)
+}
+
+func (client *Client) GetTrigger(ctx context.Context, trigger string) (*Trigger, error) {
+	triggerList, err := client.GetTriggers(ctx, []string{trigger})
+	if err != nil {
+		return nil, err
+	}
+	return triggerList[0], nil
+}
+
+func (client *Client) GetTriggers(ctx context.Context, triggers []string) ([]*Trigger, error) {
+	stream, err := client.GrpcConn.GetTriggers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		for _, trigger := range triggers {
+			stream.Send(&pb.Name{Name: trigger})
+		}
+		err := stream.CloseSend()
+		if err != nil {
+			client.Logger.Errorw("Failed to close send", "Err", err)
+		}
+	}()
+	return client.parseTriggerStream(stream)
+}
+
 type TriggerDef struct {
 	Name            string
 	ScheduleTrigger string
@@ -1304,11 +1337,11 @@ func (client *Client) DeleteTrigger(ctx context.Context, t *pb.Trigger) error {
 // }
 
 type triggerStream interface {
-	Recv() (*pb.User, error)
+	Recv() (*pb.Trigger, error)
 }
 
-func (client *Client) parseTriggerStream(stream userStream) ([]*User, error) {
-	users := make([]*User, 0)
+func (client *Client) parseTriggerStream(stream triggerStream) ([]*Trigger, error) {
+	users := make([]*Trigger, 0)
 	for {
 		serial, err := stream.Recv()
 		if err == io.EOF {
@@ -1316,7 +1349,7 @@ func (client *Client) parseTriggerStream(stream userStream) ([]*User, error) {
 		} else if err != nil {
 			return nil, err
 		}
-		users = append(users, wrapProtoUser(serial))
+		users = append(users, wrapProtoTrigger(serial))
 	}
 	return users, nil
 }
@@ -2211,6 +2244,58 @@ type SourceVariant struct {
 	protoStringer
 	fetchTagsFn
 	fetchPropertiesFn
+}
+
+type Trigger struct {
+	serialized *pb.Trigger
+	protoStringer
+	fetchJobIDsFn
+	fetchTaskIDsFn
+}
+
+func wrapProtoTrigger(serialized *pb.Trigger) *Trigger {
+	return &Trigger{
+		serialized:     serialized,
+		protoStringer:  protoStringer{serialized},
+		fetchJobIDsFn:  fetchJobIDsFn{serialized},
+		fetchTaskIDsFn: fetchTaskIDsFn{serialized},
+	}
+}
+
+type jobIDsGetter interface {
+	GetJobIds() []string
+}
+
+type fetchJobIDsFn struct {
+	getter jobIDsGetter
+}
+
+func (fn fetchJobIDsFn) JobIDs() []string {
+	jobIDs := []string{}
+	proto := fn.getter.GetJobIds()
+	if proto == nil {
+		return jobIDs
+	}
+	jobIDs = append(jobIDs, proto...)
+	return jobIDs
+}
+
+type taskIDsGetter interface {
+	GetTaskIds() []string
+}
+
+type fetchTaskIDsFn struct {
+	getter taskIDsGetter
+}
+
+func (fn fetchTaskIDsFn) TaskIDs() []string {
+	taskIDs := []string{}
+	proto := fn.getter.GetTaskIds()
+	if proto == nil {
+		return taskIDs
+	}
+	taskIDs = append(taskIDs, proto...)
+	return taskIDs
 }
 
 type TransformationArgType string

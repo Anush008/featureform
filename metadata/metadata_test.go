@@ -34,6 +34,7 @@ func TestResourceTypes(t *testing.T) {
 		LABEL_VARIANT:        LabelDef{},
 		TRAINING_SET_VARIANT: TrainingSetDef{},
 		MODEL:                ModelDef{},
+		TRIGGER:              TriggerDef{},
 	}
 	for typ, def := range typeMapping {
 		if def.ResourceType() != typ {
@@ -256,6 +257,12 @@ func filledResourceDefs() []ResourceDef {
 			Tags:         Tags{},
 			Properties:   Properties{},
 		},
+		TriggerDef{
+			Name:            "trigger1",
+			ScheduleTrigger: "* * * * *",
+			JobIDs:          []string{"1", "6"},
+			TaskIDs:         []string{"3", "4"},
+		},
 	}
 }
 
@@ -278,6 +285,8 @@ func list(client *Client, t ResourceType) (interface{}, error) {
 		return client.ListModels(ctx)
 	case PROVIDER:
 		return client.ListProviders(ctx)
+	case TRIGGER:
+		return client.ListTriggers(ctx)
 	default:
 		panic("ResourceType not handled")
 	}
@@ -310,6 +319,8 @@ func getAll(client *Client, t ResourceType, nameVars NameVariants) (interface{},
 		return client.GetModels(ctx, nameVars.Names())
 	case PROVIDER:
 		return client.GetProviders(ctx, nameVars.Names())
+	case TRIGGER:
+		return client.GetTriggers(ctx, nameVars.Names())
 	default:
 		panic("ResourceType not handled")
 	}
@@ -342,6 +353,8 @@ func get(client *Client, t ResourceType, nameVar NameVariant) (interface{}, erro
 		return client.GetModel(ctx, nameVar.Name)
 	case PROVIDER:
 		return client.GetProvider(ctx, nameVar.Name)
+	case TRIGGER:
+		return client.GetTrigger(ctx, nameVar.Name)
 	default:
 		panic("ResourceType not handled")
 	}
@@ -374,6 +387,9 @@ func update(client *Client, t ResourceType, def ResourceDef) error {
 	case PROVIDER:
 		casted := def.(ProviderDef)
 		return client.CreateProvider(ctx, casted)
+	case TRIGGER:
+		casted := def.(TriggerDef)
+		return client.CreateTrigger(ctx, casted)
 	default:
 		panic("ResourceType not handled")
 	}
@@ -999,6 +1015,25 @@ func (test SourceVariantTest) Test(t *testing.T, client *Client, res interface{}
 		testFetchLabels(t, client, source)
 		testFetchTrainingSets(t, client, source)
 	}
+}
+
+type TriggerTest struct {
+	Name            string
+	ScheduleTrigger string
+	JobIDs          []string
+	TaskIDs         []string
+}
+
+func (test TriggerTest) NameVariant() NameVariant {
+	return NameVariant{Name: test.Name}
+}
+
+func (test TriggerTest) Test(t *testing.T, client *Client, res interface{}, shouldFetch bool) {
+	trigger := res.(*Trigger)
+	// assertEqual(t, trigger.Name(), test.Name)
+	// assertEqual(t, trigger.ScheduleTrigger(), test.ScheduleTrigger)
+	assertEqual(t, trigger.JobIDs(), test.JobIDs)
+	assertEqual(t, trigger.TaskIDs(), test.TaskIDs)
 }
 
 type SourceTest ParentResourceTest
