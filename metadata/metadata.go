@@ -1932,7 +1932,8 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 	fmt.Println("Removing Trigger", tr)
 
 	// Check if Trigger exists
-	_, err := serv.lookup.Lookup(ResourceID{Name: tr.Trigger.Name, Type: TRIGGER})
+	triggerID := ResourceID{Name: tr.Trigger.Name, Type: TRIGGER}
+	triggerRecord, err := serv.lookup.Lookup(triggerID)
 	if err != nil {
 		return nil, fmt.Errorf("trigger does not exist", err)
 	}
@@ -1943,17 +1944,29 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Found Resource", resourceRecord)
+
+	// Remove the resource from the trigger
+	trigger_resources := triggerRecord.(*triggerResource).serialized.Resources
+	triggerRecord.(*triggerResource).serialized.Resources, err = removeResourceID(trigger_resources, tr.Resource)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save the trigger back
+	err = serv.lookup.Set(triggerID, triggerRecord)
+	if err != nil {
+		return nil, err
+	}
 
 	// Remove the trigger from the resource
 	switch r := resourceRecord.(type) {
 	case *featureVariantResource:
-		r.serialized.Trigger, err = _removeFromList(r.serialized.Trigger, tr.Trigger.Name)
+		r.serialized.Trigger, err = removeFromList(r.serialized.Trigger, tr.Trigger.Name)
 		if err != nil {
 			return nil, err
 		}
 	case *trainingSetVariantResource:
-		r.serialized.Trigger, err = _removeFromList(r.serialized.Trigger, tr.Trigger.Name)
+		r.serialized.Trigger, err = removeFromList(r.serialized.Trigger, tr.Trigger.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -1977,7 +1990,25 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 	return &pb.Empty{}, nil
 }
 
-func _removeFromList(slice []string, trig_name string) ([]string, error) {
+func removeResourceID(slice []*pb.ResourceID, resourceName *pb.ResourceID) ([]*pb.ResourceID, error) {
+	index := -1
+	// Find the index of the value in the slice
+	for i, v := range slice {
+		if v.Resource.Name == resourceName.Resource.Name && v.Resource.Variant == resourceName.Resource.Variant && v.ResourceType == resourceName.ResourceType {
+			index = i
+			break
+		}
+	}
+	// If the value is found, remove it using slicing
+	if index != -1 {
+		slice = append(slice[:index], slice[index+1:]...)
+	} else {
+		return nil, fmt.Errorf("resource not found in list: %s", resourceName)
+	}
+	return slice, nil
+}
+
+func removeFromList(slice []string, trig_name string) ([]string, error) {
 	index := -1
 	// Find the index of the value in the slice
 	for i, v := range slice {
@@ -2012,8 +2043,18 @@ func (serv *MetadataServer) UpdateTrigger(ctx context.Context, t *pb.Trigger) (*
 }
 
 func (serv *MetadataServer) DeleteTrigger(ctx context.Context, trigger *pb.Trigger) (*pb.Empty, error) {
+	// Ensure tigger doesnt have any resources associated with it
+	triggerID := ResourceID{Name: trigger.Name, Type: TRIGGER}
+	triggerRecord, err := serv.lookup.Lookup(triggerID)
+	if err != nil {
+		return nil, fmt.Errorf("trigger does not exist", err)
+	}
+	if len(triggerRecord.(*triggerResource).serialized.Resources) > 0 {
+		return nil, fmt.Errorf("remove resources from trigger before deleting: ", triggerRecord.(*triggerResource).serialized.Resources)
+	}
+
 	triggerResID := ResourceID{Name: trigger.Name, Type: TRIGGER}
-	err := serv.lookup.Delete(triggerResID)
+	err = serv.lookup.Delete(triggerResID)
 	if err != nil {
 		return nil, err
 	}
