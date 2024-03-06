@@ -1081,7 +1081,7 @@ class ColumnResource(ABC):
         properties: Dict[str, str],
         inference_store: Union[str, OnlineProvider, FileStoreProvider] = "",
         variant: str = "",
-        trigger: TriggerResource = None,
+        trigger: Union[List[str], List[TriggerResource]] = [],
     ):
         registrar, source_name_variant, columns = transformation_args
         self.type = type if isinstance(type, str) else type.value
@@ -1106,7 +1106,8 @@ class ColumnResource(ABC):
         self.tags = tags
         self.properties = properties
         self.variant = variant
-        self.trigger = trigger
+        self.trigger = [(t if isinstance(t, str) else t.name) for t in trigger]
+        print("IN COLUMN RESOURCE", self.trigger)
 
     def register(self):
         features, labels = self.features_and_labels()
@@ -1137,7 +1138,9 @@ class ColumnResource(ABC):
             }
         ]
         if self.resource_type == "feature":
+            print("IN FEATURES AND LABELS", self.trigger)
             resources[0]["trigger"] = self.trigger
+            print("IN FEATURES AND LABELS", resources[0]["trigger"])
             features = resources
             labels = []
         elif self.resource_type == "label":
@@ -1188,7 +1191,7 @@ class FeatureColumnResource(ColumnResource):
         schedule: str = "",
         tags: Optional[List[str]] = None,
         properties: Optional[Dict[str, str]] = None,
-        trigger: TriggerResource = None,
+        trigger: Union[List[str], List[TriggerResource]] = [],
     ):
         """
         Feature registration object.
@@ -3864,6 +3867,11 @@ class Registrar:
             feature_tags = feature.get("tags", [])
             feature_properties = feature.get("properties", {})
             additional_Parameters = self._get_additional_parameters(ondemand_feature)
+            # feature_triggers = feature.get("triggers", [])
+            # if len(feature_triggers) > 0 and isinstance(feature_triggers[0], TriggerResource):
+            #     trigger_names = []
+            #     for trig in feature_triggers:
+            #         trigger_names.append(trig.name)
             resource = FeatureVariant(
                 created=None,
                 name=feature["name"],
@@ -3885,7 +3893,7 @@ class Registrar:
                 tags=feature_tags,
                 properties=feature_properties,
                 additional_parameters=additional_Parameters,
-                trigger=feature.get("trigger", None),
+                trigger=feature.get("trigger", []),
             )
             self.__resources.append(resource)
             self.map_client_object_to_resource(client_object, resource)
@@ -3995,7 +4003,7 @@ class Registrar:
         schedule: str = "",
         tags: List[str] = [],
         properties: dict = {},
-        trigger: TriggerResource = None,
+        trigger: Union[List[str], List[TriggerResource]] = [],
     ):
         """Register a training set.
 
@@ -4061,6 +4069,7 @@ class Registrar:
             label = (label, self.__run)
         if not isinstance(label, LabelColumnResource) and label[1] == "":
             label = (label[0], self.__run)
+        trigger = [t if isinstance(t, str) else t.name for t in trigger]
 
         processed_features = []
         for feature in features:
@@ -4667,6 +4676,7 @@ class ResourceClient:
             # TODO: apply values from proto
             tags=[],
             properties={},
+            trigger=ts.trigger,
         )
 
     def print_training_set(self, name, variant=None, local=False):

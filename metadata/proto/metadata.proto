@@ -234,7 +234,7 @@ message FeatureVariant {
     bool is_embedding = 19;
     int32 dimension = 20;
     FeatureParameters additional_parameters = 21;
-    Trigger trigger = 22;
+    repeated string trigger = 22;
 }
 
 message FeatureParameters {
@@ -322,7 +322,7 @@ message TrainingSetVariant {
     repeated FeatureLag feature_lags = 15;
     Tags tags = 16;
     Properties properties = 17;
-    Trigger trigger = 18;
+    repeated string trigger = 18;
 }
 
 message Entity {
@@ -450,6 +450,7 @@ message Trigger {
 	}
 	repeated string job_ids = 3;
 	repeated string task_ids = 4;
+    repeated ResourceID resources = 5;
 }
 
 message ScheduleTrigger {
