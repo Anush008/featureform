@@ -1473,8 +1473,22 @@ func (resource *triggerResource) Schedule() string {
 }
 
 func (resource *triggerResource) Dependencies(lookup ResourceLookup) (ResourceLookup, error) {
-	// TODO: Change later, do we need to return all the resources that use this trigger?
-	return make(LocalResourceLookup), nil
+	depIdsProtos := resource.serialized.Resources
+	depIds := make([]ResourceID, 0)
+	for _, depIdProto := range depIdsProtos {
+		depId := ResourceID{
+			Name:    depIdProto.Resource.Name,
+			Variant: depIdProto.Resource.Variant,
+			Type:    ResourceType(depIdProto.ResourceType),
+		}
+		depIds = append(depIds, depId)
+	}
+
+	deps, err := lookup.Submap(depIds)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("could not create submap for IDs: %v", depIds))
+	}
+	return deps, nil
 }
 
 func (resource *triggerResource) Proto() proto.Message {
