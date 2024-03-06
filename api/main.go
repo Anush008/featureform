@@ -774,7 +774,7 @@ func (serv *MetadataServer) CreateModel(ctx context.Context, model *pb.Model) (*
 }
 
 func (serv *MetadataServer) CreateTrigger(ctx context.Context, feature *pb.Trigger) (*pb.Empty, error) {
-	serv.Logger.Infow("Creating Trigger", "trigger", feature.String())
+	serv.Logger.Infow("Creating/Updating Trigger", "trigger", feature.String())
 	return serv.meta.CreateTrigger(ctx, feature)
 }
 
@@ -786,11 +786,6 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, trigger *pb.TriggerR
 func (serv *MetadataServer) RemoveTrigger(ctx context.Context, trigger *pb.TriggerRequest) (*pb.Empty, error) {
 	serv.Logger.Infow("Removing Trigger", "trigger", trigger.String())
 	return serv.meta.RemoveTrigger(ctx, trigger)
-}
-
-func (serv *MetadataServer) UpdateTrigger(ctx context.Context, trigger *pb.Trigger) (*pb.Empty, error) {
-	serv.Logger.Infow("Updating Trigger", "trigger", trigger.String())
-	return serv.meta.UpdateTrigger(ctx, trigger)
 }
 
 func (serv *MetadataServer) DeleteTrigger(ctx context.Context, trigger *pb.Trigger) (*pb.Empty, error) {

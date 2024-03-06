@@ -1500,7 +1500,13 @@ func (resource *triggerResource) UpdateSchedule(schedule string) error {
 }
 
 func (resource *triggerResource) Update(lookup ResourceLookup, updateRes Resource) error {
-	return lookup.Set(updateRes.ID(), updateRes)
+	deserialized := updateRes.Proto()
+	triggerUpdate, ok := deserialized.(*pb.Trigger)
+	if !ok {
+		return errors.New("failed to deserialize existing model record")
+	}
+	resource.serialized.TriggerType = triggerUpdate.TriggerType
+	return nil
 }
 
 type MetadataServer struct {
@@ -1642,16 +1648,16 @@ func (serv *MetadataServer) CreateFeatureVariant(ctx context.Context, variant *p
 	for _, t := range triggers {
 		trigger, err := serv.lookup.Lookup(ResourceID{Name: t, Type: TRIGGER})
 		if err != nil {
-			return nil, fmt.Errorf("trigger does not exist", err)
+			return nil, fmt.Errorf("trigger does not exist: %v", err)
 		}
 		asserted_trigger, ok := trigger.(*triggerResource)
 		if !ok {
-			return nil, fmt.Errorf("resource not of type trigger", err)
+			return nil, fmt.Errorf("resource not of type trigger: %v", err)
 		}
 		asserted_trigger.serialized.Resources = append(asserted_trigger.serialized.Resources, &pb.ResourceID{Resource: &pb.NameVariant{Name: variant.Name, Variant: variant.Variant}, ResourceType: 4})
 		err = serv.lookup.Set(trigger.ID(), asserted_trigger)
 		if err != nil {
-			return nil, fmt.Errorf("could not set trigger", err)
+			return nil, fmt.Errorf("could not set trigger: %v", err)
 		}
 	}
 
@@ -1737,16 +1743,16 @@ func (serv *MetadataServer) CreateTrainingSetVariant(ctx context.Context, varian
 	for _, t := range triggers {
 		trigger, err := serv.lookup.Lookup(ResourceID{Name: t, Type: TRIGGER})
 		if err != nil {
-			return nil, fmt.Errorf("trigger does not exist", err)
+			return nil, fmt.Errorf("trigger does not exist: %v", err)
 		}
 		asserted_trigger, ok := trigger.(*triggerResource)
 		if !ok {
-			return nil, fmt.Errorf("resource not of type trigger", err)
+			return nil, fmt.Errorf("resource not of type trigger: %v", err)
 		}
 		asserted_trigger.serialized.Resources = append(asserted_trigger.serialized.Resources, &pb.ResourceID{Resource: &pb.NameVariant{Name: variant.Name, Variant: variant.Variant}, ResourceType: 6})
 		err = serv.lookup.Set(trigger.ID(), asserted_trigger)
 		if err != nil {
-			return nil, fmt.Errorf("could not set trigger", err)
+			return nil, fmt.Errorf("could not set trigger: %v", err)
 		}
 	}
 
@@ -1866,7 +1872,7 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.TriggerReques
 	triggerID := ResourceID{Name: tr.Trigger.Name, Type: TRIGGER}
 	triggerRecord, err := serv.lookup.Lookup(triggerID)
 	if err != nil {
-		return nil, fmt.Errorf("trigger does not exist", err)
+		return nil, fmt.Errorf("trigger does not exist: %v", err)
 	}
 
 	// Get the resource
@@ -1935,7 +1941,7 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 	triggerID := ResourceID{Name: tr.Trigger.Name, Type: TRIGGER}
 	triggerRecord, err := serv.lookup.Lookup(triggerID)
 	if err != nil {
-		return nil, fmt.Errorf("trigger does not exist", err)
+		return nil, fmt.Errorf("trigger does not exist: %v", err)
 	}
 
 	// Get the resource
@@ -2026,39 +2032,34 @@ func removeFromList(slice []string, trig_name string) ([]string, error) {
 	return slice, nil
 }
 
-func (serv *MetadataServer) UpdateTrigger(ctx context.Context, t *pb.Trigger) (*pb.Empty, error) {
-	fmt.Println("Updating Trigger", t)
-	triggerResID := ResourceID{Name: t.Name, Type: TRIGGER}
-	triggerRes, err := serv.lookup.Lookup(triggerResID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = triggerRes.Update(serv.lookup, &triggerResource{t})
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.Empty{}, nil
-}
-
 func (serv *MetadataServer) DeleteTrigger(ctx context.Context, trigger *pb.Trigger) (*pb.Empty, error) {
 	// Ensure tigger doesnt have any resources associated with it
 	triggerID := ResourceID{Name: trigger.Name, Type: TRIGGER}
 	triggerRecord, err := serv.lookup.Lookup(triggerID)
 	if err != nil {
-		return nil, fmt.Errorf("trigger does not exist", err)
+		return nil, fmt.Errorf("trigger does not exist: %v", err)
 	}
 	if len(triggerRecord.(*triggerResource).serialized.Resources) > 0 {
-		return nil, fmt.Errorf("remove resources from trigger before deleting: ", triggerRecord.(*triggerResource).serialized.Resources)
+		return nil, fmt.Errorf("remove resources from trigger before deleting: %v", triggerRecord.(*triggerResource).serialized.Resources)
 	}
 
-	triggerResID := ResourceID{Name: trigger.Name, Type: TRIGGER}
-	err = serv.lookup.Delete(triggerResID)
+	err = serv.lookup.Delete(triggerID)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil
+}
+
+func (serv *MetadataServer) ListTriggers(_ *pb.Empty, stream pb.Metadata_ListTriggersServer) error {
+	return serv.genericList(TRIGGER, func(msg proto.Message) error {
+		return stream.Send(msg.(*pb.Trigger))
+	})
+}
+
+func (serv *MetadataServer) GetTriggers(stream pb.Metadata_GetTriggersServer) error {
+	return serv.genericGet(stream, TRIGGER, func(msg proto.Message) error {
+		return stream.Send(msg.(*pb.Trigger))
+	})
 }
 
 func (serv *MetadataServer) ListModels(_ *pb.Empty, stream pb.Metadata_ListModelsServer) error {

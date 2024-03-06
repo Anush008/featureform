@@ -58,7 +58,6 @@ service Metadata {
 
     rpc AddTrigger(TriggerRequest) returns (Empty);
     rpc RemoveTrigger(TriggerRequest) returns (Empty);
-    rpc UpdateTrigger(Trigger) returns (Empty);
     rpc DeleteTrigger(Trigger) returns (Empty);
 }
 
@@ -105,7 +104,6 @@ service Api {
 
     rpc AddTrigger(TriggerRequest) returns (Empty);
     rpc RemoveTrigger(TriggerRequest) returns (Empty);
-    rpc UpdateTrigger(Trigger) returns (Empty);
     rpc DeleteTrigger(Trigger) returns (Empty);
 }
 

@@ -331,7 +331,7 @@ from featureform.client.src.featureform import metadata_pb2
         schedule_req.schedule = schedule
         req.schedule_trigger.CopyFrom(schedule_req)
 
-        self._stub.UpdateTrigger(req)
+        self._stub.CreateTrigger(req)
     
     def delete_trigger(self, trigger):
         """

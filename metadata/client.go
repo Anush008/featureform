@@ -1303,12 +1303,8 @@ func (client *Client) RemoveTrigger(ctx context.Context, tr *pb.TriggerRequest) 
 	return err
 }
 
-func (client *Client) UpdateTrigger(ctx context.Context, t *pb.Trigger) error {
-	_, err := client.GrpcConn.UpdateTrigger(ctx, t)
-	return err
-}
-
 func (client *Client) DeleteTrigger(ctx context.Context, t *pb.Trigger) error {
+
 	_, err := client.GrpcConn.DeleteTrigger(ctx, t)
 	return err
 }
@@ -2260,6 +2256,14 @@ func wrapProtoTrigger(serialized *pb.Trigger) *Trigger {
 		fetchJobIDsFn:  fetchJobIDsFn{serialized},
 		fetchTaskIDsFn: fetchTaskIDsFn{serialized},
 	}
+}
+
+func (trigger *Trigger) Name() string {
+	return trigger.serialized.GetName()
+}
+
+func (trigger *Trigger) Schedule() string {
+	return trigger.serialized.GetScheduleTrigger().Schedule
 }
 
 type jobIDsGetter interface {

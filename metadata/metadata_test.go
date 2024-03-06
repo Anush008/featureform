@@ -1030,10 +1030,50 @@ func (test TriggerTest) NameVariant() NameVariant {
 
 func (test TriggerTest) Test(t *testing.T, client *Client, res interface{}, shouldFetch bool) {
 	trigger := res.(*Trigger)
-	// assertEqual(t, trigger.Name(), test.Name)
-	// assertEqual(t, trigger.ScheduleTrigger(), test.ScheduleTrigger)
+	assertEqual(t, trigger.Name(), test.Name)
+	assertEqual(t, trigger.Schedule(), test.ScheduleTrigger)
 	assertEqual(t, trigger.JobIDs(), test.JobIDs)
 	assertEqual(t, trigger.TaskIDs(), test.TaskIDs)
+}
+
+func expectedTrigger() ResourceTests {
+	return ResourceTests{
+		TriggerTest{
+			Name:            "trigger1",
+			ScheduleTrigger: "* * * * *",
+			JobIDs:          []string{"1", "6"},
+			TaskIDs:         []string{"3", "4"},
+		},
+	}
+}
+
+func triggerUpdates() []ResourceDef {
+	return []ResourceDef{
+		TriggerDef{
+			Name:            "trigger1",
+			ScheduleTrigger: "1 2 * * *",
+			JobIDs:          []string{"1", "6"},
+			TaskIDs:         []string{"3", "4"},
+		},
+	}
+}
+
+func expectedUpdatedTriggers() ResourceTests {
+	return ResourceTests{
+		TriggerTest{
+			Name:            "trigger1",
+			ScheduleTrigger: "1 2 * * *",
+			JobIDs:          []string{"1", "6"},
+			TaskIDs:         []string{"3", "4"},
+		},
+	}
+}
+
+func TestTrigger(t *testing.T) {
+	testListResources(t, TRIGGER, expectedTrigger())
+	testGetResources(t, TRIGGER, expectedTrigger())
+	testResourceUpdates(t, TRIGGER, expectedTrigger(), expectedUpdatedTriggers(), triggerUpdates())
+
 }
 
 type SourceTest ParentResourceTest
@@ -1666,8 +1706,10 @@ func testResourceUpdates(t *testing.T, typ ResourceType, arranged, expected Reso
 			nameVariant.Name = u.(ModelDef).Name
 		case PROVIDER:
 			nameVariant.Name = u.(ProviderDef).Name
+		case TRIGGER:
+			nameVariant.Name = u.(TriggerDef).Name
 		default:
-			t.Errorf("Unrecognized resource type: %v", typ)
+			t.Fatalf("Unrecognized resource type: %v", typ)
 		}
 		actual, err := get(client, typ, nameVariant)
 		if err != nil {
