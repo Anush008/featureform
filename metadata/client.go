@@ -247,6 +247,9 @@ type FeatureDef struct {
 	IsOnDemand  bool
 	IsEmbedding bool
 	Definition  string
+	JobID       int32
+	TaskID      int32
+	Triggers    []string
 }
 
 type ResourceVariantColumns struct {
@@ -412,6 +415,9 @@ type LabelDef struct {
 	Location    interface{}
 	Tags        Tags
 	Properties  Properties
+	JobID       int32
+	TaskID      int32
+	Triggers    []string
 }
 
 func (def LabelDef) ResourceType() ResourceType {
@@ -557,6 +563,9 @@ type TrainingSetDef struct {
 	Features    NameVariants
 	Tags        Tags
 	Properties  Properties
+	JobID       int32
+	TaskID      int32
+	Triggers    []string
 }
 
 func (def TrainingSetDef) ResourceType() ResourceType {
@@ -689,6 +698,9 @@ type SourceDef struct {
 	Definition  SourceType
 	Tags        Tags
 	Properties  Properties
+	JobID       int32
+	TaskID      int32
+	Triggers    []string
 }
 
 type SourceType interface {
@@ -1239,8 +1251,8 @@ func (client *Client) GetTriggers(ctx context.Context, triggers []string) ([]*Tr
 type TriggerDef struct {
 	Name            string
 	ScheduleTrigger string
-	JobIDs          []string
-	TaskIDs         []string
+	JobIDs          []int32
+	TaskIDs         []int32
 }
 
 func (def TriggerDef) ResourceType() ResourceType {
@@ -2267,15 +2279,15 @@ func (trigger *Trigger) Schedule() string {
 }
 
 type jobIDsGetter interface {
-	GetJobIds() []string
+	GetJobIds() []int32
 }
 
 type fetchJobIDsFn struct {
 	getter jobIDsGetter
 }
 
-func (fn fetchJobIDsFn) JobIDs() []string {
-	jobIDs := []string{}
+func (fn fetchJobIDsFn) JobIDs() []int32 {
+	jobIDs := []int32{}
 	proto := fn.getter.GetJobIds()
 	if proto == nil {
 		return jobIDs
@@ -2285,15 +2297,15 @@ func (fn fetchJobIDsFn) JobIDs() []string {
 }
 
 type taskIDsGetter interface {
-	GetTaskIds() []string
+	GetTaskIds() []int32
 }
 
 type fetchTaskIDsFn struct {
 	getter taskIDsGetter
 }
 
-func (fn fetchTaskIDsFn) TaskIDs() []string {
-	taskIDs := []string{}
+func (fn fetchTaskIDsFn) TaskIDs() []int32 {
+	taskIDs := []int32{}
 	proto := fn.getter.GetTaskIds()
 	if proto == nil {
 		return taskIDs
