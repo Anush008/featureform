@@ -310,7 +310,10 @@ func (def FeatureDef) Serialize() (*pb.FeatureVariant, error) {
 		Tags:        &pb.Tags{Tag: def.Tags},
 		Properties:  def.Properties.Serialize(),
 		Mode:        pb.ComputationMode(def.Mode),
+		JobId:       def.JobID,
+		TaskId:      def.TaskID,
 		IsEmbedding: def.IsEmbedding,
+		Trigger:     def.Triggers,
 	}
 	switch x := def.Location.(type) {
 	case ResourceVariantColumns:
@@ -437,6 +440,9 @@ func (def LabelDef) Serialize() (*pb.LabelVariant, error) {
 		Provider:    def.Provider,
 		Tags:        &pb.Tags{Tag: def.Tags},
 		Properties:  def.Properties.Serialize(),
+		JobId:       def.JobID,
+		TaskId:      def.TaskID,
+		Trigger:     def.Triggers,
 	}
 	switch x := def.Location.(type) {
 	case ResourceVariantColumns:
@@ -585,6 +591,9 @@ func (def TrainingSetDef) Serialize() *pb.TrainingSetVariant {
 		Schedule:    def.Schedule,
 		Tags:        &pb.Tags{Tag: def.Tags},
 		Properties:  def.Properties.Serialize(),
+		JobId:       def.JobID,
+		TaskId:      def.TaskID,
+		Trigger:     def.Triggers,
 	}
 }
 
@@ -808,6 +817,9 @@ func (def SourceDef) Serialize() (*pb.SourceVariant, error) {
 		Schedule:    def.Schedule,
 		Tags:        &pb.Tags{Tag: def.Tags},
 		Properties:  def.Properties.Serialize(),
+		JobId:       def.JobID,
+		TaskId:      def.TaskID,
+		Trigger:     def.Triggers,
 	}
 	var err error
 	switch x := def.Definition.(type) {
@@ -1623,6 +1635,7 @@ type FeatureVariant struct {
 	fetchPropertiesFn
 	fetchIsEmbeddingFn
 	fetchDimensionFn
+	fetchTriggersFn
 }
 
 func wrapProtoFeatureVariant(serialized *pb.FeatureVariant) *FeatureVariant {
@@ -1638,6 +1651,7 @@ func wrapProtoFeatureVariant(serialized *pb.FeatureVariant) *FeatureVariant {
 		fetchPropertiesFn:    fetchPropertiesFn{serialized},
 		fetchIsEmbeddingFn:   fetchIsEmbeddingFn{serialized},
 		fetchDimensionFn:     fetchDimensionFn{serialized},
+		fetchTriggersFn:      fetchTriggersFn{serialized},
 	}
 }
 
@@ -1738,6 +1752,32 @@ func (variant *FeatureVariant) Error() string {
 
 func (variant *FeatureVariant) Location() interface{} {
 	return variant.serialized.GetLocation()
+}
+
+func (variant *FeatureVariant) JobID() interface{} {
+	return variant.serialized.GetJobId()
+}
+
+func (variant *FeatureVariant) TaskID() interface{} {
+	return variant.serialized.GetTaskId()
+}
+
+type triggersGetter interface {
+	GetTrigger() []string
+}
+
+type fetchTriggersFn struct {
+	getter triggersGetter
+}
+
+func (fn fetchTriggersFn) Triggers() []string {
+	triggers := []string{}
+	proto := fn.getter.GetTrigger()
+	if proto == nil {
+		return triggers
+	}
+	triggers = append(triggers, proto...)
+	return triggers
 }
 
 func (variant *FeatureVariant) Definition() string {
@@ -2013,6 +2053,7 @@ type LabelVariant struct {
 	protoStringer
 	fetchTagsFn
 	fetchPropertiesFn
+	fetchTriggersFn
 }
 
 func wrapProtoLabelVariant(serialized *pb.LabelVariant) *LabelVariant {
@@ -2025,6 +2066,7 @@ func wrapProtoLabelVariant(serialized *pb.LabelVariant) *LabelVariant {
 		protoStringer:        protoStringer{serialized},
 		fetchTagsFn:          fetchTagsFn{serialized},
 		fetchPropertiesFn:    fetchPropertiesFn{serialized},
+		fetchTriggersFn:      fetchTriggersFn{serialized},
 	}
 }
 
@@ -2111,6 +2153,14 @@ func (variant *LabelVariant) Properties() Properties {
 	return variant.fetchPropertiesFn.Properties()
 }
 
+func (variant *LabelVariant) JobID() interface{} {
+	return variant.serialized.GetJobId()
+}
+
+func (variant *LabelVariant) TaskID() interface{} {
+	return variant.serialized.GetTaskId()
+}
+
 type TrainingSet struct {
 	serialized *pb.TrainingSet
 	variantsFns
@@ -2138,6 +2188,7 @@ type TrainingSetVariant struct {
 	protoStringer
 	fetchTagsFn
 	fetchPropertiesFn
+	fetchTriggersFn
 }
 
 func wrapProtoTrainingSetVariant(serialized *pb.TrainingSetVariant) *TrainingSetVariant {
@@ -2150,6 +2201,7 @@ func wrapProtoTrainingSetVariant(serialized *pb.TrainingSetVariant) *TrainingSet
 		protoStringer:     protoStringer{serialized},
 		fetchTagsFn:       fetchTagsFn{serialized},
 		fetchPropertiesFn: fetchPropertiesFn{serialized},
+		fetchTriggersFn:   fetchTriggersFn{serialized},
 	}
 }
 
@@ -2223,6 +2275,14 @@ func (variant *TrainingSetVariant) Properties() Properties {
 	return variant.fetchPropertiesFn.Properties()
 }
 
+func (variant *TrainingSetVariant) JobID() interface{} {
+	return variant.serialized.GetJobId()
+}
+
+func (variant *TrainingSetVariant) TaskID() interface{} {
+	return variant.serialized.GetTaskId()
+}
+
 type Source struct {
 	serialized *pb.Source
 	variantsFns
@@ -2252,6 +2312,15 @@ type SourceVariant struct {
 	protoStringer
 	fetchTagsFn
 	fetchPropertiesFn
+	fetchTriggersFn
+}
+
+func (variant *SourceVariant) JobID() interface{} {
+	return variant.serialized.GetJobId()
+}
+
+func (variant *SourceVariant) TaskID() interface{} {
+	return variant.serialized.GetTaskId()
 }
 
 type Trigger struct {
@@ -2385,6 +2454,7 @@ func wrapProtoSourceVariant(serialized *pb.SourceVariant) *SourceVariant {
 		protoStringer:        protoStringer{serialized},
 		fetchTagsFn:          fetchTagsFn{serialized},
 		fetchPropertiesFn:    fetchPropertiesFn{serialized},
+		fetchTriggersFn:      fetchTriggersFn{serialized},
 	}
 }
 

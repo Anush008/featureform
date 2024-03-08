@@ -1146,6 +1146,9 @@ class SourceVariant(ResourceVariant):
     inputs: list = ([],)
     error: Optional[str] = None
     server_status: Optional[ServerStatus] = None
+    task_id: int = 0
+    job_id: int = 0
+    trigger: List[str] = field(default_factory=list)
 
     def update_schedule(self, schedule) -> None:
         self.schedule_obj = Schedule(
@@ -1182,6 +1185,9 @@ class SourceVariant(ResourceVariant):
             status=source.status.Status._enum_type.values[source.status.status].name,
             error=source.status.error_message,
             server_status=ServerStatus.from_proto(source.status),
+            task_id=source.task_id,
+            job_id=source.job_id,
+            trigger=list(source.trigger),
         )
 
     def _get_source_definition(self, source):
@@ -1219,6 +1225,9 @@ class SourceVariant(ResourceVariant):
             tags=pb.Tags(tag=self.tags),
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
+            task_id=self.task_id,
+            job_id=self.job_id,
+            trigger=self.trigger,
             **defArgs,
         )
         _get_and_set_equivalent_variant(serialized, "source_variant", stub)
@@ -1310,7 +1319,6 @@ class TriggerResource:
             schedule_trigger=pb.ScheduleTrigger(schedule = self.trigger_type),
             job_ids=self.job_ids,
             task_ids=self.task_ids,
-            resources=self.resources,
             )
         stub.CreateTrigger(serialized)
 
@@ -1320,7 +1328,6 @@ class TriggerResource:
             "trigger": self.trigger_type,
             "job_ids": self.job_ids,
             "task_ids": self.task_ids,
-            "resources": self.resources,
         }
 
 @typechecked
@@ -1384,6 +1391,8 @@ class FeatureVariant(ResourceVariant):
     error: Optional[str] = None
     additional_parameters: Optional[Additional_Parameters] = None
     server_status: Optional[ServerStatus] = None
+    task_id: int = 0
+    job_id: int = 0
     trigger: List[str] = field(default_factory=list)
 
     def __post_init__(self):
@@ -1413,12 +1422,7 @@ class FeatureVariant(ResourceVariant):
     def get(self, stub) -> "FeatureVariant":
         name_variant = pb.NameVariant(name=self.name, variant=self.variant)
         feature = next(stub.GetFeatureVariants(iter([name_variant])))
-        print("In resources.py get feature variant", feature.trigger)
-        # trig_resources = []
-        # for trig in feature.trigger:
-        #     trig_resources.append(trig.name)
 
-        # print("In resources.py get feature variant", trig_resources)
         return FeatureVariant(
             created=None,
             name=feature.name,
@@ -1438,16 +1442,14 @@ class FeatureVariant(ResourceVariant):
             error=feature.status.error_message,
             server_status=ServerStatus.from_proto(feature.status),
             additional_parameters=None,
+            task_id=feature.task_id,
+            job_id=feature.job_id,
             trigger=list(feature.trigger),
             )
 
     def _create(self, stub) -> Optional[str]:
         if hasattr(self.source, "name_variant"):
             self.source = self.source.name_variant()
-
-        print("In resources.py create feature variant", self.trigger)
-
-        # print("In resources.py create feature variant", proto_trig_list)
         serialized = pb.FeatureVariant(
             name=self.name,
             variant=self.variant,
@@ -1469,6 +1471,8 @@ class FeatureVariant(ResourceVariant):
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
             additional_parameters=None,
+            task_id=self.task_id,
+            job_id=self.job_id,
             trigger=self.trigger
         )
         _get_and_set_equivalent_variant(serialized, "feature_variant", stub)
@@ -1600,6 +1604,9 @@ class LabelVariant(ResourceVariant):
     status: str = "NO_STATUS"
     error: Optional[str] = None
     server_status: Optional[ServerStatus] = None
+    task_id: int = 0
+    job_id: int = 0
+    trigger: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         col_types = [member.value for member in ScalarType]
@@ -1635,6 +1642,9 @@ class LabelVariant(ResourceVariant):
             status=label.status.Status._enum_type.values[label.status.status].name,
             server_status=ServerStatus.from_proto(label.status),
             error=label.status.error_message,
+            task_id=label.task_id,
+            job_id=label.job_id,
+            trigger=list(label.trigger),
         )
 
     def _create(self, stub) -> Optional[str]:
@@ -1655,6 +1665,9 @@ class LabelVariant(ResourceVariant):
             tags=pb.Tags(tag=self.tags),
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
+            task_id=self.task_id,
+            job_id=self.job_id,
+            trigger=self.trigger
         )
         _get_and_set_equivalent_variant(serialized, "label_variant", stub)
         stub.CreateLabelVariant(serialized)
@@ -1776,6 +1789,8 @@ class TrainingSetVariant(ResourceVariant):
     status: str = "NO_STATUS"
     error: Optional[str] = None
     server_status: Optional[ServerStatus] = None
+    task_id: int = 0
+    job_id: int = 0
     trigger: List[str] = field(default_factory=list)
 
     def update_schedule(self, schedule) -> None:
@@ -1814,11 +1829,6 @@ class TrainingSetVariant(ResourceVariant):
         name_variant = pb.NameVariant(name=self.name, variant=self.variant)
         ts = next(stub.GetTrainingSetVariants(iter([name_variant])))
 
-        # trigger_resources = []
-        # for trig in ts.trigger:
-        #     trigger_resources.append(trig.name)
-
-
         return TrainingSetVariant(
             created=None,
             name=ts.name,
@@ -1834,6 +1844,8 @@ class TrainingSetVariant(ResourceVariant):
             properties={k: v for k, v in ts.properties.property.items()},
             error=ts.status.error_message,
             server_status=ServerStatus.from_proto(ts.status),
+            task_id=ts.task_id,
+            job_id=ts.job_id,
             trigger=list(ts.trigger),
             )
 
@@ -1857,10 +1869,6 @@ class TrainingSetVariant(ResourceVariant):
         if hasattr(self.label, "name_variant"):
             self.label = self.label.name_variant()
 
-        # proto_trigger_list = []
-        # for trig in self.trigger:
-        #     proto_trigger_list.append(trig.name)
-
         serialized = pb.TrainingSetVariant(
             created=None,
             name=self.name,
@@ -1874,6 +1882,8 @@ class TrainingSetVariant(ResourceVariant):
             tags=pb.Tags(tag=self.tags),
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
+            task_id=self.task_id,
+            job_id=self.job_id,
             trigger=self.trigger,
         )
         _get_and_set_equivalent_variant(serialized, "training_set_variant", stub)
