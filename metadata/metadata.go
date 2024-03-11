@@ -1866,12 +1866,12 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.TriggerReques
 		return nil, err
 	}
 
+	trigger_taskIDs := triggerRecord.(*triggerResource).serialized.TaskIds
+	trigger_jobIDs := triggerRecord.(*triggerResource).serialized.JobIds
+
 	// Add the trigger to the resource and resource to the trigger
 	switch r := resourceRecord.(type) {
 	case *featureVariantResource:
-		trigger_taskIDs := triggerRecord.(*triggerResource).serialized.TaskIds
-		trigger_jobIDs := triggerRecord.(*triggerResource).serialized.JobIds
-
 		for _, tID := range trigger_taskIDs {
 			if tID == r.serialized.TaskId {
 				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
@@ -1887,7 +1887,51 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.TriggerReques
 		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
 		r.serialized.Trigger = append(r.serialized.Trigger, tr.Trigger.Name)
 	case *trainingSetVariantResource:
+		for _, tID := range trigger_taskIDs {
+			if tID == r.serialized.TaskId {
+				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
+			}
+		}
+		for _, jID := range trigger_jobIDs {
+			if jID == r.serialized.JobId {
+				return nil, fmt.Errorf("jobID already exists in trigger: %d", jID)
+			}
+		}
+
+		triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
 		r.serialized.Trigger = append(r.serialized.Trigger, tr.Trigger.Name)
+	case *sourceVariantResource:
+		for _, tID := range trigger_taskIDs {
+			if tID == r.serialized.TaskId {
+				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
+			}
+		}
+		for _, jID := range trigger_jobIDs {
+			if jID == r.serialized.JobId {
+				return nil, fmt.Errorf("jobID already exists in trigger: %d", jID)
+			}
+		}
+
+		triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
+		r.serialized.Trigger = append(r.serialized.Trigger, tr.Trigger.Name)
+	case *labelVariantResource:
+		for _, tID := range trigger_taskIDs {
+			if tID == r.serialized.TaskId {
+				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
+			}
+		}
+		for _, jID := range trigger_jobIDs {
+			if jID == r.serialized.JobId {
+				return nil, fmt.Errorf("jobID already exists in trigger: %d", jID)
+			}
+		}
+
+		triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
+		r.serialized.Trigger = append(r.serialized.Trigger, tr.Trigger.Name)
+
 	default:
 		return nil, fmt.Errorf("could not assert resource")
 	}
@@ -1903,21 +1947,6 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.TriggerReques
 	if err != nil {
 		return nil, err
 	}
-
-	// DELETE: Checks if trigger got added
-	asserted_test_resource, ok := resourceRecord.(*featureVariantResource)
-	if !ok {
-		return nil, fmt.Errorf("could not assert trigger resource")
-	}
-	fmt.Println("Checking if trigger got added", asserted_test_resource.serialized.Trigger)
-
-	// DELETE: Check if resource got added
-	test_trig_record, _ := serv.lookup.Lookup(triggerID)
-	asserted_test_trigger, ok := test_trig_record.(*triggerResource)
-	if !ok {
-		return nil, fmt.Errorf("could not assert trigger resource")
-	}
-	fmt.Println("Checking if resource got added", asserted_test_trigger.serialized.TaskIds)
 
 	return &pb.Empty{}, nil
 }
@@ -1940,27 +1969,60 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 	}
 
 	// Remove the resource from the trigger
-	//trigger_resources := triggerRecord.(*triggerResource).serialized.Resources
-	//triggerRecord.(*triggerResource).serialized.Resources, err = removeResourceID(trigger_resources, tr.Resource)
-	if err != nil {
-		return nil, err
-	}
-
-	// Save the trigger back
-	err = serv.lookup.Set(triggerID, triggerRecord)
-	if err != nil {
-		return nil, err
-	}
+	trigger_taskIDs := triggerRecord.(*triggerResource).serialized.TaskIds
+	trigger_jobIDs := triggerRecord.(*triggerResource).serialized.JobIds
 
 	// Remove the trigger from the resource
 	switch r := resourceRecord.(type) {
 	case *featureVariantResource:
-		r.serialized.Trigger, err = removeFromList(r.serialized.Trigger, tr.Trigger.Name)
+		r.serialized.Trigger, err = removeStringFromList(r.serialized.Trigger, tr.Trigger.Name)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
 		if err != nil {
 			return nil, err
 		}
 	case *trainingSetVariantResource:
-		r.serialized.Trigger, err = removeFromList(r.serialized.Trigger, tr.Trigger.Name)
+		r.serialized.Trigger, err = removeStringFromList(r.serialized.Trigger, tr.Trigger.Name)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
+		if err != nil {
+			return nil, err
+		}
+	case *sourceVariantResource:
+		r.serialized.Trigger, err = removeStringFromList(r.serialized.Trigger, tr.Trigger.Name)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
+		if err != nil {
+			return nil, err
+		}
+	case *labelVariantResource:
+		r.serialized.Trigger, err = removeStringFromList(r.serialized.Trigger, tr.Trigger.Name)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		if err != nil {
+			return nil, err
+		}
+		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
 		if err != nil {
 			return nil, err
 		}
@@ -1973,22 +2035,19 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 	if err != nil {
 		return nil, err
 	}
-
-	// DELETE: Checks if trigger got removed
-	asserted_test_resource, ok := resourceRecord.(*featureVariantResource)
-	if !ok {
-		return nil, fmt.Errorf("could not assert trigger resource")
+	// Save the trigger back
+	err = serv.lookup.Set(triggerID, triggerRecord)
+	if err != nil {
+		return nil, err
 	}
-	fmt.Println("Checking if trigger got removed", asserted_test_resource.serialized.Trigger)
-
 	return &pb.Empty{}, nil
 }
 
-func removeResourceID(slice []*pb.ResourceID, resourceName *pb.ResourceID) ([]*pb.ResourceID, error) {
+func removeIntFromList(slice []int32, id int32) ([]int32, error) {
 	index := -1
 	// Find the index of the value in the slice
 	for i, v := range slice {
-		if v.Resource.Name == resourceName.Resource.Name && v.Resource.Variant == resourceName.Resource.Variant && v.ResourceType == resourceName.ResourceType {
+		if v == id {
 			index = i
 			break
 		}
@@ -1997,12 +2056,12 @@ func removeResourceID(slice []*pb.ResourceID, resourceName *pb.ResourceID) ([]*p
 	if index != -1 {
 		slice = append(slice[:index], slice[index+1:]...)
 	} else {
-		return nil, fmt.Errorf("resource not found in list: %s", resourceName)
+		return nil, fmt.Errorf("resource not found in list: %s", id)
 	}
 	return slice, nil
 }
 
-func removeFromList(slice []string, trig_name string) ([]string, error) {
+func removeStringFromList(slice []string, trig_name string) ([]string, error) {
 	index := -1
 	// Find the index of the value in the slice
 	for i, v := range slice {
