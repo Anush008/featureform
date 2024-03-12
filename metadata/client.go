@@ -1286,45 +1286,66 @@ func (client *Client) CreateTrigger(ctx context.Context, def TriggerDef) error {
 	return err
 }
 
-func (client *Client) AddTrigger(ctx context.Context, tr *pb.TriggerRequest) error {
-	_, err := client.GrpcConn.AddTrigger(ctx, tr)
+func (client *Client) AddTrigger(ctx context.Context, def TriggerDef, resourceDef ResourceDef) error {
+
+	resourceID, err := client.getResourceIDFromDef(resourceDef)
+	if err != nil {
+		return err
+	}
+
+	serialized := &pb.TriggerRequest{
+		Trigger: &pb.Trigger{
+			Name: def.Name,
+			TriggerType: &pb.Trigger_ScheduleTrigger{
+				ScheduleTrigger: &pb.ScheduleTrigger{
+					Schedule: def.ScheduleTrigger,
+				},
+			},
+			JobIds:  def.JobIDs,
+			TaskIds: def.TaskIDs,
+		},
+		Resource: &pb.ResourceID{
+			Resource: &pb.NameVariant{
+				Name:    resourceID.Name,
+				Variant: resourceID.Variant,
+			},
+			ResourceType: resourceID.Type.Serialized(),
+		},
+	}
+
+	_, err = client.GrpcConn.AddTrigger(ctx, serialized)
 	return err
 }
 
-// func (client *Client) RemoveTrigger(ctx context.Context, def TriggerDef, resourceDef ResourceDef) error {
-// resourceID, err := client.getResourceIDFromDef(resourceDef)
-// if err != nil {
-// 	return err
-// }
+func (client *Client) RemoveTrigger(ctx context.Context, def TriggerDef, resourceDef ResourceDef) error {
+	resourceID, err := client.getResourceIDFromDef(resourceDef)
+	if err != nil {
+		return err
+	}
 
-// serialized := &pb.TriggerRequest{
-// 	Trigger: &pb.Trigger{
-// 		Name: def.Name,
-// 		TriggerType: &pb.Trigger_ScheduleTrigger{
-// 			ScheduleTrigger: &pb.ScheduleTrigger{
-// 				Schedule: def.ScheduleTrigger,
-// 			},
-// 		},
-// 		JobIds:  def.JobIDs,
-// 		TaskIds: def.TaskIDs,
-// 	},
-// 	Resource: &pb.ResourceID{
-// 		Resource: &pb.NameVariant{
-// 			Name:    resourceID.Name,
-// 			Variant: resourceID.Variant,
-// 		},
-// 		ResourceType: resourceID.Type.Serialized(),
-// 	},
-// }
+	serialized := &pb.TriggerRequest{
+		Trigger: &pb.Trigger{
+			Name: def.Name,
+			TriggerType: &pb.Trigger_ScheduleTrigger{
+				ScheduleTrigger: &pb.ScheduleTrigger{
+					Schedule: def.ScheduleTrigger,
+				},
+			},
+			JobIds:  def.JobIDs,
+			TaskIds: def.TaskIDs,
+		},
+		Resource: &pb.ResourceID{
+			Resource: &pb.NameVariant{
+				Name:    resourceID.Name,
+				Variant: resourceID.Variant,
+			},
+			ResourceType: resourceID.Type.Serialized(),
+		},
+	}
 
-// _, err = client.GrpcConn.RemoveTrigger(ctx, serialized)
-// return err
-
-// }
-
-func (client *Client) RemoveTrigger(ctx context.Context, tr *pb.TriggerRequest) error {
-	_, err := client.GrpcConn.RemoveTrigger(ctx, tr)
+	_, err = client.GrpcConn.RemoveTrigger(ctx, serialized)
 	return err
+
 }
 
 func (client *Client) DeleteTrigger(ctx context.Context, t *pb.Trigger) error {
@@ -1333,28 +1354,42 @@ func (client *Client) DeleteTrigger(ctx context.Context, t *pb.Trigger) error {
 	return err
 }
 
-// func (client *Client) getResourceIDFromDef(def ResourceDef) (ResourceID, error) {
-// 	var resourceID ResourceID
-// 	switch def.ResourceType() {
-// 	case FEATURE_VARIANT:
-// 		fv := def.(FeatureDef)
-// 		resourceID = ResourceID{
-// 			Name:    fv.Name,
-// 			Variant: fv.Variant,
-// 			Type:    fv.ResourceType(),
-// 		}
-// 	case TRAINING_SET_VARIANT:
-// 		ts := def.(TrainingSetDef)
-// 		resourceID = ResourceID{
-// 			Name:    ts.Name,
-// 			Variant: ts.Variant,
-// 			Type:    ts.ResourceType(),
-// 		}
-// 	default:
-// 		return ResourceID{}, fmt.Errorf("unsupported resource type %s", def.ResourceType())
-// 	}
-// 	return resourceID, nil
-// }
+func (client *Client) getResourceIDFromDef(def ResourceDef) (ResourceID, error) {
+	var resourceID ResourceID
+	switch def.ResourceType() {
+	case FEATURE_VARIANT:
+		fv := def.(FeatureDef)
+		resourceID = ResourceID{
+			Name:    fv.Name,
+			Variant: fv.Variant,
+			Type:    fv.ResourceType(),
+		}
+	case TRAINING_SET_VARIANT:
+		ts := def.(TrainingSetDef)
+		resourceID = ResourceID{
+			Name:    ts.Name,
+			Variant: ts.Variant,
+			Type:    ts.ResourceType(),
+		}
+	case LABEL_VARIANT:
+		l := def.(LabelDef)
+		resourceID = ResourceID{
+			Name:    l.Name,
+			Variant: l.Variant,
+			Type:    l.ResourceType(),
+		}
+	case SOURCE_VARIANT:
+		s := def.(SourceDef)
+		resourceID = ResourceID{
+			Name:    s.Name,
+			Variant: s.Variant,
+			Type:    s.ResourceType(),
+		}
+	default:
+		return ResourceID{}, fmt.Errorf("unsupported resource type %s", def.ResourceType())
+	}
+	return resourceID, nil
+}
 
 type triggerStream interface {
 	Recv() (*pb.Trigger, error)

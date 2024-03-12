@@ -78,6 +78,10 @@ func filledResourceDefs() []ResourceDef {
 			Name:            "trigger2",
 			ScheduleTrigger: "1 2 * * *",
 		},
+		TriggerDef{
+			Name:            "trigger3",
+			ScheduleTrigger: "2 3 * * *",
+		},
 		ProviderDef{
 			Name:             "mockOnline",
 			Description:      "A mock online provider",
@@ -127,8 +131,8 @@ func filledResourceDefs() []ResourceDef {
 			Provider:   "mockOffline",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     3,
-			JobID:      4,
+			TaskID:     1,
+			JobID:      2,
 			Triggers:   []string{"trigger2"},
 		},
 		SourceDef{
@@ -146,7 +150,7 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			TaskID:     3,
 			JobID:      4,
-			Triggers:   []string{"trigger2"},
+			Triggers:   []string{"trigger1"},
 		},
 		FeatureDef{
 			Name:        "feature",
@@ -166,8 +170,8 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       PRECOMPUTED,
 			IsOnDemand: false,
-			TaskID:     1,
-			JobID:      2,
+			TaskID:     5,
+			JobID:      6,
 			Triggers:   []string{"trigger2"},
 		},
 		FeatureDef{
@@ -188,9 +192,9 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       PRECOMPUTED,
 			IsOnDemand: false,
-			TaskID:     1,
-			JobID:      2,
-			Triggers:   []string{"trigger2"},
+			TaskID:     7,
+			JobID:      8,
+			Triggers:   []string{"trigger3"},
 		},
 		FeatureDef{
 			Name:        "feature2",
@@ -210,9 +214,9 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       PRECOMPUTED,
 			IsOnDemand: false,
-			TaskID:     1,
-			JobID:      2,
-			Triggers:   []string{"trigger2"},
+			TaskID:     9,
+			JobID:      10,
+			Triggers:   []string{"trigger3"},
 		},
 		FeatureDef{
 			Name:        "feature3",
@@ -226,8 +230,8 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     1,
-			JobID:      2,
+			TaskID:     11,
+			JobID:      12,
 			Triggers:   []string{"trigger2"},
 		},
 		LabelDef{
@@ -246,8 +250,8 @@ func filledResourceDefs() []ResourceDef {
 			},
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     5,
-			JobID:      6,
+			TaskID:     13,
+			JobID:      14,
 			Triggers:   []string{"trigger1"},
 		},
 		TrainingSetDef{
@@ -263,8 +267,8 @@ func filledResourceDefs() []ResourceDef {
 			Owner:      "Other",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     7,
-			JobID:      8,
+			TaskID:     15,
+			JobID:      16,
 			Triggers:   []string{"trigger1"},
 		},
 		TrainingSetDef{
@@ -280,9 +284,9 @@ func filledResourceDefs() []ResourceDef {
 			Owner:      "Featureform",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     7,
-			JobID:      8,
-			Triggers:   []string{"trigger1"},
+			TaskID:     17,
+			JobID:      18,
+			Triggers:   []string{"trigger3"},
 		},
 		ModelDef{
 			Name:         "fraud",
@@ -1106,14 +1110,20 @@ func expectedTrigger() ResourceTests {
 		TriggerTest{
 			Name:            "trigger1",
 			ScheduleTrigger: "* * * * *",
-			TaskIDs:         []int32{5, 7, 7},
-			JobIDs:          []int32{6, 8, 8},
+			TaskIDs:         []int32{3, 13, 15},
+			JobIDs:          []int32{4, 14, 16},
 		},
 		TriggerTest{
 			Name:            "trigger2",
 			ScheduleTrigger: "1 2 * * *",
-			TaskIDs:         []int32{3, 3, 1, 1, 1, 1},
-			JobIDs:          []int32{4, 4, 2, 2, 2, 2},
+			TaskIDs:         []int32{1, 5, 11},
+			JobIDs:          []int32{2, 6, 12},
+		},
+		TriggerTest{
+			Name:            "trigger3",
+			ScheduleTrigger: "2 3 * * *",
+			TaskIDs:         []int32{7, 9, 17},
+			JobIDs:          []int32{8, 10, 18},
 		},
 	}
 }
@@ -1132,8 +1142,338 @@ func expectedUpdatedTriggers() ResourceTests {
 		TriggerTest{
 			Name:            "trigger1",
 			ScheduleTrigger: "1 * * * *",
-			TaskIDs:         []int32{5, 7, 7},
-			JobIDs:          []int32{6, 8, 8},
+			TaskIDs:         []int32{3, 13, 15},
+			JobIDs:          []int32{4, 14, 16},
+		},
+	}
+}
+
+func testTriggerRemove(t *testing.T, originalTriggers ResourceTests, removeTrigger []TriggerDef, expectedRemovedTrigger []TriggerTest, removeResource []ResourceDef, expectedRemovedResource ResourceTests) {
+	ctx := testContext{
+		Defs: filledResourceDefs(),
+	}
+	client, err := ctx.Create(t)
+	defer ctx.Destroy()
+	if err != nil {
+		t.Fatalf("Failed to create resources: %s", err)
+	}
+	names := originalTriggers.NameVariants()
+	resources, err := getAll(client, TRIGGER, names)
+	if err != nil {
+		t.Fatalf("Failed to get all triggers: %v", names)
+	}
+	originalTriggers.Test(t, client, resources, true)
+
+	// check that triggerRemove and remove have the same length
+	if len(removeTrigger) != len(removeResource) {
+		t.Fatalf("triggerRemove and remove must have the same length")
+	}
+	for i, u := range removeResource {
+		if err := client.RemoveTrigger(context.Background(), removeTrigger[i], u); err != nil {
+			t.Fatalf("Failed to remove resource: %v", err)
+		}
+		triggerNameVariant := NameVariant{Name: removeTrigger[i].Name}
+		nameVariant := NameVariant{}
+		switch def := u.(type) {
+		case FeatureDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		case LabelDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		case SourceDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		case TrainingSetDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		default:
+			t.Fatalf("Unrecognized resource type: %v", u)
+		}
+		actualResource, err := get(client, u.ResourceType(), nameVariant)
+		if err != nil {
+			t.Fatalf("Failed to get resource: %v", nameVariant)
+		}
+		expectedRemovedResource[i].Test(t, client, actualResource, true)
+
+		actualTrigger, err := get(client, TRIGGER, triggerNameVariant)
+		if err != nil {
+			t.Fatalf("Failed to get resource: %v", triggerNameVariant)
+		}
+		expectedRemovedTrigger[i].Test(t, client, actualTrigger, true)
+	}
+}
+
+func triggerRemove() []TriggerDef {
+	return []TriggerDef{
+		{
+			Name:            "trigger1",
+			ScheduleTrigger: "* * * * *",
+			TaskIDs:         []int32{3, 13, 15},
+			JobIDs:          []int32{4, 14, 16},
+		},
+		{
+			Name:            "trigger2",
+			ScheduleTrigger: "1 2 * * *",
+			TaskIDs:         []int32{1, 5, 11},
+			JobIDs:          []int32{2, 6, 12},
+		},
+	}
+}
+
+func resourceRemove() []ResourceDef {
+	return []ResourceDef{
+		LabelDef{
+			Name:        "label",
+			Variant:     "variant",
+			Type:        "int64",
+			Description: "label variant",
+			Provider:    "mockOffline",
+			Entity:      "user",
+			Source:      NameVariant{"mockSource", "var"},
+			Owner:       "Other",
+			Location: ResourceVariantColumns{
+				Entity: "col1",
+				Value:  "col2",
+				TS:     "col3",
+			},
+			Tags:       Tags{},
+			Properties: Properties{},
+			TaskID:     13,
+			JobID:      14,
+			Triggers:   []string{"trigger1"},
+		},
+		FeatureDef{
+			Name:        "feature3",
+			Variant:     "on-demand",
+			Description: "Feature3 on-demand",
+			Owner:       "Featureform",
+			Location: PythonFunction{
+				Query: []byte(PythonFunc),
+			},
+			Tags:       Tags{},
+			Properties: Properties{},
+			Mode:       CLIENT_COMPUTED,
+			IsOnDemand: true,
+			TaskID:     11,
+			JobID:      12,
+			Triggers:   []string{"trigger2"},
+		},
+	}
+}
+
+func expectedRemovedTriggers() []TriggerTest {
+	return []TriggerTest{
+		{
+			Name:            "trigger1",
+			ScheduleTrigger: "* * * * *",
+			TaskIDs:         []int32{3, 15},
+			JobIDs:          []int32{4, 16},
+		},
+		{
+			Name:            "trigger2",
+			ScheduleTrigger: "1 2 * * *",
+			TaskIDs:         []int32{1, 5},
+			JobIDs:          []int32{2, 6},
+		},
+	}
+}
+
+func expectedRemovedResources() ResourceTests {
+	return ResourceTests{
+		LabelVariantTest{
+			Name:        "label",
+			Variant:     "variant",
+			Type:        "int64",
+			Description: "label variant",
+			Provider:    "mockOffline",
+			Entity:      "user",
+			Source:      NameVariant{"mockSource", "var"},
+			Owner:       "Other",
+			Location: ResourceVariantColumns{
+				Entity: "col1",
+				Value:  "col2",
+				TS:     "col3",
+			},
+			TaskID:   13,
+			JobID:    14,
+			Triggers: []string{},
+		},
+		FeatureVariantTest{
+			Name:        "feature3",
+			Variant:     "on-demand",
+			Description: "Feature3 on-demand",
+			Owner:       "Featureform",
+			Location: PythonFunction{
+				Query: []byte(PythonFunc),
+			},
+			Mode:       CLIENT_COMPUTED,
+			IsOnDemand: true,
+			TaskID:     11,
+			JobID:      12,
+			Triggers:   []string{},
+		},
+	}
+}
+
+func testTriggerAdd(t *testing.T, originalTriggers ResourceTests, addTrigger []TriggerDef, expectedAddedTrigger []TriggerTest, addResource []ResourceDef, expectedAddedResource ResourceTests) {
+	ctx := testContext{
+		Defs: filledResourceDefs(),
+	}
+	client, err := ctx.Create(t)
+	defer ctx.Destroy()
+	if err != nil {
+		t.Fatalf("Failed to create resources: %s", err)
+	}
+	names := originalTriggers.NameVariants()
+	resources, err := getAll(client, TRIGGER, names)
+	if err != nil {
+		t.Fatalf("Failed to get all triggers: %v", names)
+	}
+	originalTriggers.Test(t, client, resources, true)
+
+	// check that triggerRemove and remove have the same length
+	if len(addTrigger) != len(addResource) {
+		t.Fatalf("triggerAdd and resourceAdd must have the same length")
+	}
+	for i, u := range addResource {
+		if err := client.AddTrigger(context.Background(), addTrigger[i], u); err != nil {
+			t.Fatalf("Failed to remove resource: %v", err)
+		}
+		triggerNameVariant := NameVariant{Name: addTrigger[i].Name}
+		nameVariant := NameVariant{}
+		switch def := u.(type) {
+		case FeatureDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		case LabelDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		case SourceDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		case TrainingSetDef:
+			nameVariant.Name = def.Name
+			nameVariant.Variant = def.Variant
+		default:
+			t.Fatalf("Unrecognized resource type: %v", u)
+		}
+		actualResource, err := get(client, u.ResourceType(), nameVariant)
+		if err != nil {
+			t.Fatalf("Failed to get resource: %v", nameVariant)
+		}
+		expectedAddedResource[i].Test(t, client, actualResource, true)
+
+		actualTrigger, err := get(client, TRIGGER, triggerNameVariant)
+		if err != nil {
+			t.Fatalf("Failed to get resource: %v", triggerNameVariant)
+		}
+		expectedAddedTrigger[i].Test(t, client, actualTrigger, true)
+	}
+}
+
+func triggerAdd() []TriggerDef {
+	return []TriggerDef{
+		{
+			Name:            "trigger1",
+			ScheduleTrigger: "* * * * *",
+			TaskIDs:         []int32{3, 13, 15},
+			JobIDs:          []int32{4, 14, 16},
+		},
+		{
+			Name:            "trigger2",
+			ScheduleTrigger: "1 2 * * *",
+			TaskIDs:         []int32{1, 5, 11},
+			JobIDs:          []int32{2, 6, 12},
+		},
+	}
+}
+
+func resourceAdd() []ResourceDef {
+	return []ResourceDef{
+		FeatureDef{
+			Name:        "feature3",
+			Variant:     "on-demand",
+			Description: "Feature3 on-demand",
+			Owner:       "Featureform",
+			Location: PythonFunction{
+				Query: []byte(PythonFunc),
+			},
+			Tags:       Tags{},
+			Properties: Properties{},
+			Mode:       CLIENT_COMPUTED,
+			IsOnDemand: true,
+			TaskID:     11,
+			JobID:      12,
+			Triggers:   []string{"trigger2"},
+		},
+		TrainingSetDef{
+			Name:        "training-set",
+			Variant:     "variant",
+			Provider:    "mockOffline",
+			Description: "training-set variant",
+			Label:       NameVariant{"label", "variant"},
+			Features: NameVariants{
+				{"feature", "variant"},
+				{"feature", "variant2"},
+			},
+			Owner:      "Other",
+			Tags:       Tags{},
+			Properties: Properties{},
+			TaskID:     15,
+			JobID:      16,
+			Triggers:   []string{"trigger1"},
+		},
+	}
+}
+
+func expectedAddedTriggers() []TriggerTest {
+	return []TriggerTest{
+		{
+			Name:            "trigger1",
+			ScheduleTrigger: "* * * * *",
+			TaskIDs:         []int32{3, 13, 15, 11},
+			JobIDs:          []int32{4, 14, 16, 12},
+		},
+		{
+			Name:            "trigger2",
+			ScheduleTrigger: "1 2 * * *",
+			TaskIDs:         []int32{1, 5, 11, 15},
+			JobIDs:          []int32{2, 6, 12, 16},
+		},
+	}
+}
+
+func expectedAddedResources() ResourceTests {
+	return ResourceTests{
+		FeatureVariantTest{
+			Name:        "feature3",
+			Variant:     "on-demand",
+			Description: "Feature3 on-demand",
+			Owner:       "Featureform",
+			Location: PythonFunction{
+				Query: []byte(PythonFunc),
+			},
+			Mode:       CLIENT_COMPUTED,
+			IsOnDemand: true,
+			TaskID:     11,
+			JobID:      12,
+			Triggers:   []string{"trigger2", "trigger1"},
+		},
+		TrainingSetVariantTest{
+			Name:        "training-set",
+			Variant:     "variant",
+			Provider:    "mockOffline",
+			Description: "training-set variant",
+			Label:       NameVariant{"label", "variant"},
+			Features: NameVariants{
+				{"feature", "variant"},
+				{"feature", "variant2"},
+			},
+			Owner:    "Other",
+			TaskID:   15,
+			JobID:    16,
+			Triggers: []string{"trigger1", "trigger2"},
 		},
 	}
 }
@@ -1142,6 +1482,8 @@ func TestTrigger(t *testing.T) {
 	testListResources(t, TRIGGER, expectedTrigger())
 	testGetResources(t, TRIGGER, expectedTrigger())
 	testResourceUpdates(t, TRIGGER, expectedTrigger(), expectedUpdatedTriggers(), triggerUpdates())
+	testTriggerRemove(t, expectedTrigger(), triggerRemove(), expectedRemovedTriggers(), resourceRemove(), expectedRemovedResources())
+	testTriggerAdd(t, expectedTrigger(), triggerAdd(), expectedAddedTriggers(), resourceAdd(), expectedAddedResources())
 }
 
 type SourceTest ParentResourceTest
@@ -1362,8 +1704,8 @@ func expectedFeatureVariants() ResourceTests {
 				TS:     "col3",
 			},
 			IsTable:  true,
-			TaskID:   1,
-			JobID:    2,
+			TaskID:   5,
+			JobID:    6,
 			Triggers: []string{"trigger2"},
 		},
 		FeatureVariantTest{
@@ -1385,9 +1727,9 @@ func expectedFeatureVariants() ResourceTests {
 				TS:     "col3",
 			},
 			IsTable:  true,
-			TaskID:   1,
-			JobID:    2,
-			Triggers: []string{"trigger2"},
+			TaskID:   7,
+			JobID:    8,
+			Triggers: []string{"trigger3"},
 		},
 		FeatureVariantTest{
 			Name:        "feature2",
@@ -1406,10 +1748,10 @@ func expectedFeatureVariants() ResourceTests {
 				Value:  "col2",
 				TS:     "col3",
 			},
-			TaskID:   1,
-			JobID:    2,
+			TaskID:   9,
+			JobID:    10,
 			IsTable:  true,
-			Triggers: []string{"trigger2"},
+			Triggers: []string{"trigger3"},
 		},
 		FeatureVariantTest{
 			Name:        "feature3",
@@ -1421,8 +1763,8 @@ func expectedFeatureVariants() ResourceTests {
 			},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     1,
-			JobID:      2,
+			TaskID:     11,
+			JobID:      12,
 			Triggers:   []string{"trigger2"},
 		},
 	}
@@ -1533,8 +1875,8 @@ func expectedLabelVariants() ResourceTests {
 				TS:     "col3",
 			},
 			IsTable:  true,
-			TaskID:   5,
-			JobID:    6,
+			TaskID:   13,
+			JobID:    14,
 			Triggers: []string{"trigger1"},
 		},
 	}
@@ -1629,8 +1971,8 @@ func expectedTrainingSetVariants() ResourceTests {
 				{"feature", "variant2"},
 			},
 			Owner:    "Other",
-			TaskID:   7,
-			JobID:    8,
+			TaskID:   15,
+			JobID:    16,
 			Triggers: []string{"trigger1"},
 		},
 		TrainingSetVariantTest{
@@ -1644,9 +1986,9 @@ func expectedTrainingSetVariants() ResourceTests {
 				{"feature", "variant2"},
 			},
 			Owner:    "Featureform",
-			TaskID:   7,
-			JobID:    8,
-			Triggers: []string{"trigger1"},
+			TaskID:   17,
+			JobID:    18,
+			Triggers: []string{"trigger3"},
 		},
 	}
 }

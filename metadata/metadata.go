@@ -2056,7 +2056,7 @@ func removeIntFromList(slice []int32, id int32) ([]int32, error) {
 	if index != -1 {
 		slice = append(slice[:index], slice[index+1:]...)
 	} else {
-		return nil, fmt.Errorf("resource not found in list: %s", id)
+		return nil, fmt.Errorf("resource not found in list: %d", id)
 	}
 	return slice, nil
 }
@@ -2308,6 +2308,16 @@ func (serv *MetadataServer) genericCreate(ctx context.Context, res Resource, ini
 			asserted_trigger, ok := trigger.(*triggerResource)
 			if !ok {
 				return nil, fmt.Errorf("resource not of type trigger: %v", err)
+			}
+			for _, t := range asserted_trigger.serialized.TaskIds {
+				if t == taskid {
+					return nil, fmt.Errorf("taskID already exists in trigger: %d", taskid)
+				}
+			}
+			for _, j := range asserted_trigger.serialized.JobIds {
+				if j == jobid {
+					return nil, fmt.Errorf("jobID already exists in trigger: %d", jobid)
+				}
 			}
 			asserted_trigger.serialized.TaskIds = append(asserted_trigger.serialized.TaskIds, taskid)
 			asserted_trigger.serialized.JobIds = append(asserted_trigger.serialized.JobIds, jobid)
