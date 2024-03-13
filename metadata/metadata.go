@@ -7,11 +7,12 @@ package metadata
 import (
 	"context"
 	"fmt"
-	"github.com/featureform/helpers"
 	"io"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/featureform/helpers"
 
 	"github.com/featureform/fferr"
 	"github.com/featureform/lib"
@@ -354,7 +355,7 @@ func (lookup LocalResourceLookup) Delete(id ResourceID) error {
 		return err
 	}
 	if !has {
-		return &ResourceNotFoundError{id, nil}
+		return fferr.NewDatasetNotFoundError(id.Name, id.Variant, fmt.Errorf("resource not found"))
 	}
 	delete(lookup, id)
 	return nil

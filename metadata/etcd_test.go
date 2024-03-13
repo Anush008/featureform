@@ -904,7 +904,7 @@ func TestEtcdConfig_Delete(t *testing.T) {
 		error error
 	}{
 		{"Test Delete Empty Key", "", rpctypes.EtcdError{}},
-		{"Test Delete Non Existent Key", "non_existent", KeyNotFoundError{}},
+		{"Test Delete Non Existent Key", "non_existent", &fferr.KeyNotFoundError{}},
 		{"Test Delete Valid Key", "key", nil},
 	}
 	for _, tt := range tests {

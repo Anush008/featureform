@@ -165,7 +165,7 @@ func (s EtcdStorage) Delete(key string) error {
 		return err
 	}
 	if numDeleted.Deleted == 0 {
-		return KeyNotFoundError{key}
+		return fferr.NewKeyNotFoundError(key, fmt.Errorf("key not found in etcd"))
 	}
 
 	return nil
