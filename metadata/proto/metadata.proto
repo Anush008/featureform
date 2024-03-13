@@ -56,8 +56,8 @@ service Metadata {
 
     rpc SetResourceStatus(SetStatusRequest) returns (Empty);
 
-    rpc AddTrigger(TriggerRequest) returns (Empty);
-    rpc RemoveTrigger(TriggerRequest) returns (Empty);
+    rpc AddTrigger(AddTriggerRequest) returns (Empty);
+    rpc RemoveTrigger(RemoveTriggerRequest) returns (Empty);
     rpc DeleteTrigger(Trigger) returns (Empty);
 }
 
@@ -102,8 +102,8 @@ service Api {
     rpc ListModels(Empty) returns (stream Model);
     rpc ListTriggers(Empty) returns (stream Trigger);
 
-    rpc AddTrigger(TriggerRequest) returns (Empty);
-    rpc RemoveTrigger(TriggerRequest) returns (Empty);
+    rpc AddTrigger(AddTriggerRequest) returns (Empty);
+    rpc RemoveTrigger(RemoveTriggerRequest) returns (Empty);
     rpc DeleteTrigger(Trigger) returns (Empty);
 }
 
@@ -465,7 +465,12 @@ message ScheduleTrigger {
 	string schedule = 1;
 }
 
-message TriggerRequest {
+message AddTriggerRequest {
+	Trigger trigger = 1;
+	ResourceID resource = 2;
+}
+
+message RemoveTriggerRequest {
 	Trigger trigger = 1;
 	ResourceID resource = 2;
 }

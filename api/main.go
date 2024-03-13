@@ -778,12 +778,12 @@ func (serv *MetadataServer) CreateTrigger(ctx context.Context, trigger *pb.Trigg
 	return serv.meta.CreateTrigger(ctx, trigger)
 }
 
-func (serv *MetadataServer) AddTrigger(ctx context.Context, triggerRequest *pb.TriggerRequest) (*pb.Empty, error) {
+func (serv *MetadataServer) AddTrigger(ctx context.Context, triggerRequest *pb.AddTriggerRequest) (*pb.Empty, error) {
 	serv.Logger.Infow("Adding Trigger", "trigger", triggerRequest.String())
 	return serv.meta.AddTrigger(ctx, triggerRequest)
 }
 
-func (serv *MetadataServer) RemoveTrigger(ctx context.Context, triggerRequest *pb.TriggerRequest) (*pb.Empty, error) {
+func (serv *MetadataServer) RemoveTrigger(ctx context.Context, triggerRequest *pb.RemoveTriggerRequest) (*pb.Empty, error) {
 	serv.Logger.Infow("Removing Trigger", "trigger", triggerRequest.String())
 	return serv.meta.RemoveTrigger(ctx, triggerRequest)
 }

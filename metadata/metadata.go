@@ -1849,7 +1849,7 @@ func (serv *MetadataServer) CreateTrigger(ctx context.Context, trigger *pb.Trigg
 	return serv.genericCreate(ctx, &triggerResource{trigger}, nil)
 }
 
-func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.TriggerRequest) (*pb.Empty, error) {
+func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.AddTriggerRequest) (*pb.Empty, error) {
 	fmt.Println("Adding Trigger", tr)
 
 	// Check if Trigger exists
@@ -1951,7 +1951,7 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.TriggerReques
 	return &pb.Empty{}, nil
 }
 
-func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerRequest) (*pb.Empty, error) {
+func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.RemoveTriggerRequest) (*pb.Empty, error) {
 	fmt.Println("Removing Trigger", tr)
 
 	// Check if Trigger exists
@@ -1975,54 +1975,54 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 	// Remove the trigger from the resource
 	switch r := resourceRecord.(type) {
 	case *featureVariantResource:
-		r.serialized.Triggers, err = removeStringFromList(r.serialized.Triggers, tr.Trigger.Name)
+		r.serialized.Triggers, err = helpers.RemoveFromList(r.serialized.Triggers, tr.Trigger.Name)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
+		triggerRecord.(*triggerResource).serialized.JobIds, err = helpers.RemoveFromList(trigger_jobIDs, r.serialized.JobId)
 		if err != nil {
 			return nil, err
 		}
 	case *trainingSetVariantResource:
-		r.serialized.Triggers, err = removeStringFromList(r.serialized.Triggers, tr.Trigger.Name)
+		r.serialized.Triggers, err = helpers.RemoveFromList(r.serialized.Triggers, tr.Trigger.Name)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
+		triggerRecord.(*triggerResource).serialized.JobIds, err = helpers.RemoveFromList(trigger_jobIDs, r.serialized.JobId)
 		if err != nil {
 			return nil, err
 		}
 	case *sourceVariantResource:
-		r.serialized.Triggers, err = removeStringFromList(r.serialized.Triggers, tr.Trigger.Name)
+		r.serialized.Triggers, err = helpers.RemoveFromList(r.serialized.Triggers, tr.Trigger.Name)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
+		triggerRecord.(*triggerResource).serialized.JobIds, err = helpers.RemoveFromList(trigger_jobIDs, r.serialized.JobId)
 		if err != nil {
 			return nil, err
 		}
 	case *labelVariantResource:
-		r.serialized.Triggers, err = removeStringFromList(r.serialized.Triggers, tr.Trigger.Name)
+		r.serialized.Triggers, err = helpers.RemoveFromList(r.serialized.Triggers, tr.Trigger.Name)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = removeIntFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.JobIds, err = removeIntFromList(trigger_jobIDs, r.serialized.JobId)
+		triggerRecord.(*triggerResource).serialized.JobIds, err = helpers.RemoveFromList(trigger_jobIDs, r.serialized.JobId)
 		if err != nil {
 			return nil, err
 		}
@@ -2041,42 +2041,6 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.TriggerReq
 		return nil, err
 	}
 	return &pb.Empty{}, nil
-}
-
-func removeIntFromList(slice []int32, id int32) ([]int32, error) {
-	index := -1
-	// Find the index of the value in the slice
-	for i, v := range slice {
-		if v == id {
-			index = i
-			break
-		}
-	}
-	// If the value is found, remove it using slicing
-	if index != -1 {
-		slice = append(slice[:index], slice[index+1:]...)
-	} else {
-		return nil, fmt.Errorf("resource not found in list: %d", id)
-	}
-	return slice, nil
-}
-
-func removeStringFromList(slice []string, trig_name string) ([]string, error) {
-	index := -1
-	// Find the index of the value in the slice
-	for i, v := range slice {
-		if v == trig_name {
-			index = i
-			break
-		}
-	}
-	// If the value is found, remove it using slicing
-	if index != -1 {
-		slice = append(slice[:index], slice[index+1:]...)
-	} else {
-		return nil, fmt.Errorf("trigger not found in list: %s", trig_name)
-	}
-	return slice, nil
 }
 
 func (serv *MetadataServer) DeleteTrigger(ctx context.Context, trigger *pb.Trigger) (*pb.Empty, error) {
@@ -2459,17 +2423,14 @@ func (serv *MetadataServer) genericGet(stream interface{}, t ResourceType, send 
 		if recvErr != nil {
 			return fferr.NewInternalError(recvErr)
 		}
-		//serv.Logger.Infow("Looking up Resource", "id", id)
 		resource, err := serv.lookup.Lookup(id)
 		if err != nil {
 			return err
 		}
-		//serv.Logger.Infow("Sending Resource", "id", id)
 		serialized := resource.Proto()
 		if err := send(serialized); err != nil {
 			return fferr.NewInternalError(err)
 		}
-		//serv.Logger.Infow("Send Complete", "id", id)
 	}
 }
 

@@ -1293,7 +1293,7 @@ func (client *Client) AddTrigger(ctx context.Context, def TriggerDef, resourceDe
 		return err
 	}
 
-	serialized := &pb.TriggerRequest{
+	serialized := &pb.AddTriggerRequest{
 		Trigger: &pb.Trigger{
 			Name: def.Name,
 			TriggerType: &pb.Trigger_ScheduleTrigger{
@@ -1323,7 +1323,7 @@ func (client *Client) RemoveTrigger(ctx context.Context, def TriggerDef, resourc
 		return err
 	}
 
-	serialized := &pb.TriggerRequest{
+	serialized := &pb.RemoveTriggerRequest{
 		Trigger: &pb.Trigger{
 			Name: def.Name,
 			TriggerType: &pb.Trigger_ScheduleTrigger{

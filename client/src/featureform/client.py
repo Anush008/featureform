@@ -24,7 +24,7 @@ class Client(ResourceClient, ServingClient):
     ```py title="definitions.py"
     import featureform as ff
     from featureform import Client
-from featureform.client.src.featureform import metadata_pb2
+    from featureform.client.src.featureform import metadata_pb2
 
     client = Client()
 
@@ -228,7 +228,7 @@ from featureform.client.src.featureform import metadata_pb2
             )
         return self.impl._get_source_columns(name, variant)
     
-    def _create_trigger(self, trigger):
+    def _create_trigger_proto(self, trigger):
         req = metadata_pb2.Trigger()
         if isinstance(trigger, str):
             req.name = trigger
@@ -238,28 +238,21 @@ from featureform.client.src.featureform import metadata_pb2
             raise ValueError(f"Invalid trigger type: {type(trigger)}. Please use the trigger name or TriggerResource")
         
         return req
-
     
-    def _create_trigger_request(self, trigger, resource):
-        req = metadata_pb2.TriggerRequest()
-
-        trigger_req = self._create_trigger(trigger)
-        req.trigger.CopyFrom(trigger_req)
-
-        resource_req = metadata_pb2.ResourceID()
+    def _create_resource_proto(self, resource):
+        req = metadata_pb2.ResourceID()
         if isinstance(resource, tuple):
             if len(resource) != 3:
                 raise ValueError(f"Invalid resource tuple: {resource}. resource tuple must have name, variant and type.")
-            resource_req.resource.name = resource[0]
-            resource_req.resource.variant = resource[1]
-            resource_req.resource_type = resource[2]
+            req.resource.name = resource[0]
+            req.resource.variant = resource[1]
+            req.resource_type = resource[2]
         elif isinstance(resource, Union[FeatureColumnResource, TrainingSetVariant]):
-            resource_req.resource.name = resource.name
-            resource_req.resource.variant = resource.variant
-            resource_req.resource_type = resource.resource_type
+            req.resource.name = resource.name
+            req.resource.variant = resource.variant
+            req.resource_type = resource.resource_type
         else:
             raise ValueError(f"Invalid resource type: {type(resource)}. Please use a tuple or resource object.")
-        req.resource.CopyFrom(resource_req)
         return req
 
     def add_trigger(self, trigger, resource):
@@ -275,7 +268,12 @@ from featureform.client.src.featureform import metadata_pb2
             trigger(Union[str, TriggerResource]): The name of the trigger
             resource(Union[tuple, FeatureColumnResource, TrainingSetVariant]): The name, variant and type of the resource
         """
-        req = self._create_trigger_request(trigger, resource)
+        
+        req = metadata_pb2.AddTriggerRequest()
+        trigger_req = self._create_trigger_proto(trigger)
+        req.trigger.CopyFrom(trigger_req)
+        resource_req = self._create_resource_proto(resource)
+        req.resource.CopyFrom(resource_req)
 
         self._stub.AddTrigger(req)
     
@@ -292,8 +290,12 @@ from featureform.client.src.featureform import metadata_pb2
             trigger(Union[str, TriggerResource]): The name of the trigger
             resource(Union[tuple, FeatureColumnResource, TrainingSetVariant]): The name, variant and type of the resource
         """
-        req = self._create_trigger_request(trigger, resource)
-        
+        req = metadata_pb2.RemoveTriggerRequest()
+        trigger_req = self._create_trigger_proto(trigger)
+        req.trigger.CopyFrom(trigger_req)
+        resource_req = self._create_resource_proto(resource)
+        req.resource.CopyFrom(resource_req)
+
         self._stub.RemoveTrigger(req)
     
     def update_trigger(self, trigger, schedule):
@@ -309,7 +311,7 @@ from featureform.client.src.featureform import metadata_pb2
             trigger_name (Union[str, TriggerResource]): The name of the trigger
             TODO: schedule (str): The new schedule for the trigger
         """
-        req = self._create_trigger(trigger)
+        req = self._create_trigger_proto(trigger)
         schedule_req = metadata_pb2.ScheduleTrigger()
         schedule_req.schedule = schedule
         req.schedule_trigger.CopyFrom(schedule_req)
@@ -328,7 +330,7 @@ from featureform.client.src.featureform import metadata_pb2
         Args:
             trigger_name (Union[str, TriggerResource]): The name of the trigger
         """
-        req = self._create_trigger(trigger)
+        req = self._create_trigger_proto(trigger)
         self._stub.DeleteTrigger(req)
     
     @staticmethod
