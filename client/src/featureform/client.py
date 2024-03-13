@@ -9,6 +9,7 @@ from .register import (
     FeatureColumnResource,
     TriggerResource,
     TrainingSetVariant,
+    LabelColumnResource,
 )
 from .serving import ServingClient
 from .enums import ResourceType
@@ -226,6 +227,40 @@ from featureform.client.src.featureform import metadata_pb2
                 "use client.columns(name, variant) or client.columns(source) or client.columns(transformation)"
             )
         return self.impl._get_source_columns(name, variant)
+    
+    def _create_trigger(self, trigger):
+        req = metadata_pb2.Trigger()
+        if isinstance(trigger, str):
+            req.name = trigger
+        elif isinstance(trigger, TriggerResource):
+            req.name = trigger.name
+        else:
+            raise ValueError(f"Invalid trigger type: {type(trigger)}. Please use the trigger name or TriggerResource")
+        
+        return req
+
+    
+    def _create_trigger_request(self, trigger, resource):
+        req = metadata_pb2.TriggerRequest()
+
+        trigger_req = self._create_trigger(trigger)
+        req.trigger.CopyFrom(trigger_req)
+
+        resource_req = metadata_pb2.ResourceID()
+        if isinstance(resource, tuple):
+            if len(resource) != 3:
+                raise ValueError(f"Invalid resource tuple: {resource}. resource tuple must have name, variant and type.")
+            resource_req.resource.name = resource[0]
+            resource_req.resource.variant = resource[1]
+            resource_req.resource_type = resource[2]
+        elif isinstance(resource, Union[FeatureColumnResource, TrainingSetVariant]):
+            resource_req.resource.name = resource.name
+            resource_req.resource.variant = resource.variant
+            resource_req.resource_type = resource.resource_type
+        else:
+            raise ValueError(f"Invalid resource type: {type(resource)}. Please use a tuple or resource object.")
+        req.resource.CopyFrom(resource_req)
+        return req
 
     def add_trigger(self, trigger, resource):
         """
@@ -240,30 +275,7 @@ from featureform.client.src.featureform import metadata_pb2
             trigger(Union[str, TriggerResource]): The name of the trigger
             resource(Union[tuple, FeatureColumnResource, TrainingSetVariant]): The name, variant and type of the resource
         """
-        req = metadata_pb2.TriggerRequest()
-
-        trigger_req = metadata_pb2.Trigger()
-        if isinstance(trigger, str):
-            trigger_req.name = trigger
-        elif isinstance(trigger, TriggerResource):
-            trigger_req.name = trigger.name
-        else:
-            raise ValueError("Invalid trigger type")
-        req.trigger.CopyFrom(trigger_req)
-
-        resource_req = metadata_pb2.ResourceID()
-        if isinstance(resource, tuple):
-            resource_req.resource.name = resource[0]
-            resource_req.resource.variant = resource[1]
-            # TODO: Need to convert this to a real resource type
-            resource_req.resource_type = resource[2]
-        elif isinstance(resource, Union[FeatureColumnResource, TrainingSetVariant]):
-            resource_req.resource.name = resource.name
-            resource_req.resource.variant = resource.variant
-            resource_req.resource_type = resource.resource_type
-        else:
-            raise ValueError("Invalid resource type")
-        req.resource.CopyFrom(resource_req)
+        req = self._create_trigger_request(trigger, resource)
 
         self._stub.AddTrigger(req)
     
@@ -280,30 +292,7 @@ from featureform.client.src.featureform import metadata_pb2
             trigger(Union[str, TriggerResource]): The name of the trigger
             resource(Union[tuple, FeatureColumnResource, TrainingSetVariant]): The name, variant and type of the resource
         """
-        req = metadata_pb2.TriggerRequest()
-
-        trigger_req = metadata_pb2.Trigger()
-        if isinstance(trigger, str):
-            trigger_req.name = trigger
-        elif isinstance(trigger, TriggerResource):
-            trigger_req.name = trigger.name
-        else:
-            raise ValueError("Invalid trigger type")
-        req.trigger.CopyFrom(trigger_req)
-
-        resource_req = metadata_pb2.ResourceID()
-        if isinstance(resource, tuple):
-            resource_req.resource.name = resource[0]
-            resource_req.resource.variant = resource[1]
-            # TODO: Need to convert this to a real resource type
-            resource_req.resource_type = resource[2]
-        elif isinstance(resource, Union[FeatureColumnResource, TrainingSetVariant]):
-            resource_req.resource.name = resource.name
-            resource_req.resource.variant = resource.variant
-            resource_req.resource_type = resource.resource_type
-        else:
-            raise ValueError("Invalid resource type")
-        req.resource.CopyFrom(resource_req)
+        req = self._create_trigger_request(trigger, resource)
         
         self._stub.RemoveTrigger(req)
     
@@ -320,13 +309,7 @@ from featureform.client.src.featureform import metadata_pb2
             trigger_name (Union[str, TriggerResource]): The name of the trigger
             TODO: schedule (str): The new schedule for the trigger
         """
-        req = metadata_pb2.Trigger()
-        if isinstance(trigger, str):
-            req.name = trigger
-        elif isinstance(trigger, TriggerResource):
-            req.name = trigger.name
-        else:
-            raise ValueError("Invalid trigger type")
+        req = self._create_trigger(trigger)
         schedule_req = metadata_pb2.ScheduleTrigger()
         schedule_req.schedule = schedule
         req.schedule_trigger.CopyFrom(schedule_req)
@@ -345,17 +328,9 @@ from featureform.client.src.featureform import metadata_pb2
         Args:
             trigger_name (Union[str, TriggerResource]): The name of the trigger
         """
-        req = metadata_pb2.Trigger()
-        if isinstance(trigger, str):
-            req.name = trigger
-        elif isinstance(trigger, TriggerResource):
-            req.name = trigger.name
-        else:
-            raise ValueError("Invalid trigger type")
-        # TODO: Make sure that if there is a resource which uses this trigger, you call delete trigger first
+        req = self._create_trigger(trigger)
         self._stub.DeleteTrigger(req)
-
-
+    
     @staticmethod
     def _validate_host(host):
         if host.startswith("http://") or host.startswith("https://"):

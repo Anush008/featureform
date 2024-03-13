@@ -234,7 +234,7 @@ message FeatureVariant {
     FeatureParameters additional_parameters = 21;
     int32 task_id = 22;
     int32 job_id = 23;
-    repeated string trigger = 24;
+    repeated string triggers = 24;
 }
 
 message FeatureParameters {
@@ -284,7 +284,7 @@ message LabelVariant {
     Properties properties = 14;
     int32 task_id = 15;
     int32 job_id = 16;
-    repeated string trigger = 17;
+    repeated string triggers = 17;
 
 }
 
@@ -328,7 +328,7 @@ message TrainingSetVariant {
     Properties properties = 17;
     int32 task_id = 18;
     int32 job_id = 19;
-    repeated string trigger = 20;
+    repeated string triggers = 20;
 }
 
 message Entity {
@@ -392,7 +392,7 @@ message SourceVariant {
     Properties properties = 18;
     int32 task_id = 19;
     int32 job_id = 20;
-    repeated string trigger = 21;
+    repeated string triggers = 21;
 }
 
 message Transformation {

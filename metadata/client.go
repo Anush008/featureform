@@ -313,7 +313,7 @@ func (def FeatureDef) Serialize() (*pb.FeatureVariant, error) {
 		JobId:       def.JobID,
 		TaskId:      def.TaskID,
 		IsEmbedding: def.IsEmbedding,
-		Trigger:     def.Triggers,
+		Triggers:    def.Triggers,
 	}
 	switch x := def.Location.(type) {
 	case ResourceVariantColumns:
@@ -442,7 +442,7 @@ func (def LabelDef) Serialize() (*pb.LabelVariant, error) {
 		Properties:  def.Properties.Serialize(),
 		JobId:       def.JobID,
 		TaskId:      def.TaskID,
-		Trigger:     def.Triggers,
+		Triggers:    def.Triggers,
 	}
 	switch x := def.Location.(type) {
 	case ResourceVariantColumns:
@@ -593,7 +593,7 @@ func (def TrainingSetDef) Serialize() *pb.TrainingSetVariant {
 		Properties:  def.Properties.Serialize(),
 		JobId:       def.JobID,
 		TaskId:      def.TaskID,
-		Trigger:     def.Triggers,
+		Triggers:    def.Triggers,
 	}
 }
 
@@ -819,7 +819,7 @@ func (def SourceDef) Serialize() (*pb.SourceVariant, error) {
 		Properties:  def.Properties.Serialize(),
 		JobId:       def.JobID,
 		TaskId:      def.TaskID,
-		Trigger:     def.Triggers,
+		Triggers:    def.Triggers,
 	}
 	var err error
 	switch x := def.Definition.(type) {
@@ -1798,7 +1798,7 @@ func (variant *FeatureVariant) TaskID() interface{} {
 }
 
 type triggersGetter interface {
-	GetTrigger() []string
+	GetTriggers() []string
 }
 
 type fetchTriggersFn struct {
@@ -1807,7 +1807,7 @@ type fetchTriggersFn struct {
 
 func (fn fetchTriggersFn) Triggers() []string {
 	triggers := []string{}
-	proto := fn.getter.GetTrigger()
+	proto := fn.getter.GetTriggers()
 	if proto == nil {
 		return triggers
 	}

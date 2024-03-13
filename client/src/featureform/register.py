@@ -1083,9 +1083,7 @@ class ColumnResource(ABC):
         properties: Dict[str, str],
         inference_store: Union[str, OnlineProvider, FileStoreProvider] = "",
         variant: str = "",
-        task_id: int = 0,
-        job_id: int = 0,
-        trigger: Union[List[str], List[TriggerResource]] = [],
+        triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         registrar, source_name_variant, columns = transformation_args
         self.type = type if isinstance(type, str) else type.value
@@ -1110,9 +1108,7 @@ class ColumnResource(ABC):
         self.tags = tags
         self.properties = properties
         self.variant = variant
-        self.task_id = task_id
-        self.job_id = job_id
-        self.trigger = [(t if isinstance(t, str) else t.name) for t in trigger]
+        self.triggers = [(t if isinstance(t, str) else t.name) for t in triggers]
 
     def register(self):
         features, labels = self.features_and_labels()
@@ -1142,7 +1138,7 @@ class ColumnResource(ABC):
                 "properties": self.properties,
                 "task_id": self.task_id,
                 "job_id": self.job_id,
-                "trigger": self.trigger,
+                "triggers": self.triggers,
             }
         ]
         if self.resource_type == "feature":
@@ -1196,9 +1192,7 @@ class FeatureColumnResource(ColumnResource):
         schedule: str = "",
         tags: Optional[List[str]] = None,
         properties: Optional[Dict[str, str]] = None,
-        task_id: int = 0,
-        job_id: int = 0,
-        trigger: Union[List[str], List[TriggerResource]] = [],
+        triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """
         Feature registration object.
@@ -1235,9 +1229,7 @@ class FeatureColumnResource(ColumnResource):
             schedule=schedule,
             tags=tags,
             properties=properties,
-            trigger=trigger,
-            task_id=task_id,
-            job_id=job_id,
+            triggers=triggers,
         )
 
 
@@ -1410,9 +1402,7 @@ class LabelColumnResource(ColumnResource):
         schedule: str = "",
         tags: List[str] = [],
         properties: Dict[str, str] = {},
-        task_id: int = 0,
-        job_id: int = 0,
-        trigger: Union[List[str], List[TriggerResource]] = [],
+        triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """
         Label registration object.
@@ -1446,8 +1436,7 @@ class LabelColumnResource(ColumnResource):
             schedule=schedule,
             tags=tags,
             properties=properties,
-            task_id=task_id,
-            job_id=job_id,
+            triggers=triggers,
         )
 
 
@@ -1692,7 +1681,7 @@ class Registrar:
                 properties={},
                 task_id=0,
                 job_id=0,
-                trigger=[],
+                triggers=[],
             )
             return ColumnSourceRegistrar(self, mock_source)
 
@@ -3339,7 +3328,7 @@ class Registrar:
         description: str = "",
         task_id: int = 0,
         job_id: int = 0,
-        trigger: Union[List[str], List[TriggerResource]] = [],
+        triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """Register a primary data source.
 
@@ -3374,7 +3363,7 @@ class Registrar:
             properties=properties,
             task_id=task_id,
             job_id=job_id,
-            trigger=trigger,
+            triggers=triggers,
         )
         self.__resources.append(source)
         column_source_registrar = ColumnSourceRegistrar(self, source)
@@ -3695,7 +3684,7 @@ class Registrar:
             return decorator(fn)
         
 
-    def register_trigger(self, trigger_name, trigger_type):
+    def _register_trigger(self, trigger_name, trigger_type):
         """Register a trigger.
 
         Args:
@@ -3915,7 +3904,7 @@ class Registrar:
                 additional_parameters=additional_Parameters,
                 task_id=feature["task_id"],
                 job_id=feature["job_id"],
-                trigger=feature.get("trigger", []),
+                triggers=feature.get("triggers", []),
             )
             self.__resources.append(resource)
             self.map_client_object_to_resource(client_object, resource)
@@ -3954,7 +3943,7 @@ class Registrar:
                 task_id=label["task_id"],
                 job_id=label["job_id"],
                 properties=label_properties,
-                trigger=label.get("trigger", []),
+                triggers=label.get("triggers", []),
             )
             self.__resources.append(resource)
             self.map_client_object_to_resource(client_object, resource)
@@ -4030,7 +4019,7 @@ class Registrar:
         properties: dict = {},
         task_id: int = 0,
         job_id: int = 0,
-        trigger: Union[List[str], List[TriggerResource]] = [],
+        triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """Register a training set.
 
@@ -4096,7 +4085,7 @@ class Registrar:
             label = (label, self.__run)
         if not isinstance(label, LabelColumnResource) and label[1] == "":
             label = (label[0], self.__run)
-        trigger = [t if isinstance(t, str) else t.name for t in trigger]
+        triggers = [t if isinstance(t, str) else t.name for t in triggers]
 
         processed_features = []
         for feature in features:
@@ -4117,7 +4106,7 @@ class Registrar:
             properties=properties,
             task_id=task_id,
             job_id=job_id,
-            trigger=trigger,
+            triggers=triggers,
         )
         self.__resources.append(resource)
         return resource
@@ -4466,7 +4455,7 @@ class ResourceClient:
             status=feature.status.Status._enum_type.values[feature.status.status].name,
             task_id=feature.task_id,
             job_id=feature.job_id,
-            trigger=feature.trigger,
+            triggers=feature.triggers,
         )
 
     def print_feature(self, name, variant=None, local=False):
@@ -4588,7 +4577,7 @@ class ResourceClient:
             status=label.status.Status._enum_type.values[label.status.status].name,
             task_id=label.task_id,
             job_id=label.job_id,
-            trigger=label.trigger,
+            triggers=label.triggers,
         )
 
     def print_label(self, name, variant=None, local=False):
@@ -4713,7 +4702,7 @@ class ResourceClient:
             properties={},
             task_id=ts.task_id,
             job_id=ts.job_id,
-            trigger=ts.trigger,
+            triggers=ts.triggers,
         )
 
     def print_training_set(self, name, variant=None, local=False):
@@ -4832,7 +4821,7 @@ class ResourceClient:
             ),
             task_id=source.task_id,
             job_id=source.job_id,
-            trigger=source.trigger,
+            triggers=source.triggers,
         )
 
     def _get_source_definition(self, source):
@@ -5592,7 +5581,7 @@ get_s3 = global_registrar.get_s3
 get_gcs = global_registrar.get_gcs
 ondemand_feature = global_registrar.ondemand_feature
 ResourceStatus = ResourceStatus
-ScheduleTrigger = global_registrar.register_trigger
+ScheduleTrigger = global_registrar._register_trigger
 
 Nil = ScalarType.NIL
 String = ScalarType.STRING
