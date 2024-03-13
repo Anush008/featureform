@@ -1290,11 +1290,16 @@ func expectedRemovedResources() ResourceTests {
 			Entity:      "user",
 			Source:      NameVariant{"mockSource", "var"},
 			Owner:       "Other",
+			TrainingSets: []NameVariant{
+				{"training-set", "variant"},
+				{"training-set", "variant2"},
+			},
 			Location: ResourceVariantColumns{
 				Entity: "col1",
 				Value:  "col2",
 				TS:     "col3",
 			},
+			IsTable:  true,
 			TaskID:   13,
 			JobID:    14,
 			Triggers: []string{},
