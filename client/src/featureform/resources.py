@@ -1146,9 +1146,9 @@ class SourceVariant(ResourceVariant):
     inputs: list = ([],)
     error: Optional[str] = None
     server_status: Optional[ServerStatus] = None
-    task_id: int = 0
+    task_ids: List[int] = field(default_factory=list)
     job_id: int = 0
-    trigger: List[str] = field(default_factory=list)
+    triggers: List[str] = field(default_factory=list)
 
     def update_schedule(self, schedule) -> None:
         self.schedule_obj = Schedule(
@@ -1185,9 +1185,9 @@ class SourceVariant(ResourceVariant):
             status=source.status.Status._enum_type.values[source.status.status].name,
             error=source.status.error_message,
             server_status=ServerStatus.from_proto(source.status),
-            task_id=source.task_id,
+            task_ids=source.task_ids,
             job_id=source.job_id,
-            trigger=list(source.trigger),
+            triggers=list(source.triggers),
         )
 
     def _get_source_definition(self, source):
@@ -1225,9 +1225,9 @@ class SourceVariant(ResourceVariant):
             tags=pb.Tags(tag=self.tags),
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
-            task_id=self.task_id,
+            task_ids=self.task_ids,
             job_id=self.job_id,
-            trigger=self.trigger,
+            triggers=self.triggers,
             **defArgs,
         )
         _get_and_set_equivalent_variant(serialized, "source_variant", stub)
@@ -1391,7 +1391,7 @@ class FeatureVariant(ResourceVariant):
     error: Optional[str] = None
     additional_parameters: Optional[Additional_Parameters] = None
     server_status: Optional[ServerStatus] = None
-    task_id: int = 0
+    task_ids: List[int] = field(default_factory=list)
     job_id: int = 0
     triggers: List[str] = field(default_factory=list)
 
@@ -1442,7 +1442,7 @@ class FeatureVariant(ResourceVariant):
             error=feature.status.error_message,
             server_status=ServerStatus.from_proto(feature.status),
             additional_parameters=None,
-            task_id=feature.task_id,
+            task_ids=feature.task_ids,
             job_id=feature.job_id,
             triggers=list(feature.triggers),
             )

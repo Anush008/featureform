@@ -131,7 +131,7 @@ func filledResourceDefs() []ResourceDef {
 			Provider:   "mockOffline",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     1,
+			TaskIDs:    []int32{1},
 			JobID:      2,
 			Triggers:   []string{"trigger2"},
 		},
@@ -148,7 +148,7 @@ func filledResourceDefs() []ResourceDef {
 			Provider:   "mockOffline",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     3,
+			TaskIDs:    []int32{3},
 			JobID:      4,
 			Triggers:   []string{"trigger1"},
 		},
@@ -170,7 +170,7 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       PRECOMPUTED,
 			IsOnDemand: false,
-			TaskID:     5,
+			TaskIDs:    []int32{5},
 			JobID:      6,
 			Triggers:   []string{"trigger2"},
 		},
@@ -192,7 +192,7 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       PRECOMPUTED,
 			IsOnDemand: false,
-			TaskID:     7,
+			TaskIDs:    []int32{7},
 			JobID:      8,
 			Triggers:   []string{"trigger3"},
 		},
@@ -214,7 +214,7 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       PRECOMPUTED,
 			IsOnDemand: false,
-			TaskID:     9,
+			TaskIDs:    []int32{9},
 			JobID:      10,
 			Triggers:   []string{"trigger3"},
 		},
@@ -230,7 +230,7 @@ func filledResourceDefs() []ResourceDef {
 			Properties: Properties{},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     11,
+			TaskIDs:    []int32{11},
 			JobID:      12,
 			Triggers:   []string{"trigger2"},
 		},
@@ -250,7 +250,7 @@ func filledResourceDefs() []ResourceDef {
 			},
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     13,
+			TaskIDs:    []int32{13},
 			JobID:      14,
 			Triggers:   []string{"trigger1"},
 		},
@@ -267,7 +267,7 @@ func filledResourceDefs() []ResourceDef {
 			Owner:      "Other",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     15,
+			TaskIDs:    []int32{15},
 			JobID:      16,
 			Triggers:   []string{"trigger1"},
 		},
@@ -284,7 +284,7 @@ func filledResourceDefs() []ResourceDef {
 			Owner:      "Featureform",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     17,
+			TaskIDs:    []int32{17},
 			JobID:      18,
 			Triggers:   []string{"trigger3"},
 		},
@@ -1051,7 +1051,7 @@ type SourceVariantTest struct {
 	IsPrimaryDataSQLTable    bool
 	PrimaryDataSQLTableName  string
 	SQLTransformationSources []NameVariant
-	TaskID                   int32
+	TaskIDs                  []int32
 	JobID                    int32
 	Triggers                 []string
 }
@@ -1239,7 +1239,7 @@ func resourceRemove() []ResourceDef {
 			},
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     13,
+			TaskIDs:    []int32{13},
 			JobID:      14,
 			Triggers:   []string{"trigger1"},
 		},
@@ -1255,7 +1255,7 @@ func resourceRemove() []ResourceDef {
 			Properties: Properties{},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     11,
+			TaskIDs:    []int32{11},
 			JobID:      12,
 			Triggers:   []string{"trigger2"},
 		},
@@ -1300,7 +1300,7 @@ func expectedRemovedResources() ResourceTests {
 				TS:     "col3",
 			},
 			IsTable:  true,
-			TaskID:   13,
+			TaskIDs:  []int32{13},
 			JobID:    14,
 			Triggers: []string{},
 		},
@@ -1314,7 +1314,7 @@ func expectedRemovedResources() ResourceTests {
 			},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     11,
+			TaskIDs:    []int32{11},
 			JobID:      12,
 			Triggers:   []string{},
 		},
@@ -1408,7 +1408,7 @@ func resourceAdd() []ResourceDef {
 			Properties: Properties{},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     11,
+			TaskIDs:    []int32{11},
 			JobID:      12,
 			Triggers:   []string{"trigger2"},
 		},
@@ -1425,7 +1425,7 @@ func resourceAdd() []ResourceDef {
 			Owner:      "Other",
 			Tags:       Tags{},
 			Properties: Properties{},
-			TaskID:     15,
+			TaskIDs:    []int32{15},
 			JobID:      16,
 			Triggers:   []string{"trigger1"},
 		},
@@ -1461,7 +1461,7 @@ func expectedAddedResources() ResourceTests {
 			},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     11,
+			TaskIDs:    []int32{11},
 			JobID:      12,
 			Triggers:   []string{"trigger2", "trigger1"},
 		},
@@ -1476,7 +1476,7 @@ func expectedAddedResources() ResourceTests {
 				{"feature", "variant2"},
 			},
 			Owner:    "Other",
-			TaskID:   15,
+			TaskIDs:  []int32{15},
 			JobID:    16,
 			Triggers: []string{"trigger1", "trigger2"},
 		},
@@ -1552,7 +1552,7 @@ func expectedSourceVariants() ResourceTests {
 				Name:    "mockName",
 				Variant: "mockVariant",
 			}},
-			TaskID:   3,
+			TaskIDs:  []int32{3},
 			JobID:    4,
 			Triggers: []string{"trigger2"},
 		},
@@ -1576,7 +1576,7 @@ func expectedSourceVariants() ResourceTests {
 				{"training-set", "variant"},
 				{"training-set", "variant2"},
 			},
-			TaskID:   3,
+			TaskIDs:  []int32{3},
 			JobID:    4,
 			Triggers: []string{"trigger2"},
 		},
@@ -1646,7 +1646,7 @@ type FeatureVariantTest struct {
 	IsTable      bool
 	Mode         ComputationMode
 	IsOnDemand   bool
-	TaskID       int32
+	TaskIDs      []int32
 	JobID        int32
 	Triggers     []string
 }
@@ -1662,7 +1662,7 @@ func (test FeatureVariantTest) Test(t *testing.T, client *Client, res interface{
 	assertEqual(t, feature.Variant(), test.Variant)
 	assertEqual(t, feature.Description(), test.Description)
 	assertEqual(t, feature.Owner(), test.Owner)
-	assertEqual(t, feature.TaskID(), test.TaskID)
+	assertEqual(t, feature.TaskIDs(), test.TaskIDs)
 	assertEqual(t, feature.JobID(), test.JobID)
 	assertEquivalentStrings(t, feature.Triggers(), test.Triggers)
 	if feature.Mode() == PRECOMPUTED {
@@ -1709,7 +1709,7 @@ func expectedFeatureVariants() ResourceTests {
 				TS:     "col3",
 			},
 			IsTable:  true,
-			TaskID:   5,
+			TaskIDs:  []int32{5},
 			JobID:    6,
 			Triggers: []string{"trigger2"},
 		},
@@ -1732,7 +1732,7 @@ func expectedFeatureVariants() ResourceTests {
 				TS:     "col3",
 			},
 			IsTable:  true,
-			TaskID:   7,
+			TaskIDs:  []int32{7},
 			JobID:    8,
 			Triggers: []string{"trigger3"},
 		},
@@ -1753,7 +1753,7 @@ func expectedFeatureVariants() ResourceTests {
 				Value:  "col2",
 				TS:     "col3",
 			},
-			TaskID:   9,
+			TaskIDs:  []int32{9},
 			JobID:    10,
 			IsTable:  true,
 			Triggers: []string{"trigger3"},
@@ -1768,7 +1768,7 @@ func expectedFeatureVariants() ResourceTests {
 			},
 			Mode:       CLIENT_COMPUTED,
 			IsOnDemand: true,
-			TaskID:     11,
+			TaskIDs:    []int32{11},
 			JobID:      12,
 			Triggers:   []string{"trigger2"},
 		},
@@ -1826,7 +1826,7 @@ type LabelVariantTest struct {
 	TrainingSets []NameVariant
 	Location     ResourceVariantColumns
 	IsTable      bool
-	TaskID       int32
+	TaskIDs      []int32
 	JobID        int32
 	Triggers     []string
 }
@@ -1848,7 +1848,7 @@ func (test LabelVariantTest) Test(t *testing.T, client *Client, res interface{},
 	assertEqual(t, label.Entity(), test.Entity)
 	assertEqual(t, label.isTable(), test.IsTable)
 	assertEqual(t, label.JobID(), test.JobID)
-	assertEqual(t, label.TaskID(), test.TaskID)
+	assertEqual(t, label.TaskIDs(), test.TaskIDs)
 	assertEquivalentStrings(t, label.Triggers(), test.Triggers)
 	assertEquivalentNameVariants(t, label.TrainingSets(), test.TrainingSets)
 	assertEquivalentNameVariants(t, label.TrainingSets(), test.TrainingSets)
@@ -1880,7 +1880,7 @@ func expectedLabelVariants() ResourceTests {
 				TS:     "col3",
 			},
 			IsTable:  true,
-			TaskID:   13,
+			TaskIDs:  []int32{13},
 			JobID:    14,
 			Triggers: []string{"trigger1"},
 		},
@@ -1934,7 +1934,7 @@ type TrainingSetVariantTest struct {
 	Provider    string
 	Label       NameVariant
 	Features    []NameVariant
-	TaskID      int32
+	TaskIDs     []int32
 	JobID       int32
 	Triggers    []string
 }
@@ -1952,7 +1952,7 @@ func (test TrainingSetVariantTest) Test(t *testing.T, client *Client, resource i
 	assertEqual(t, trainingSet.Owner(), test.Owner)
 	assertEqual(t, trainingSet.Provider(), test.Provider)
 	assertEqual(t, trainingSet.Label(), test.Label)
-	assertEqual(t, trainingSet.TaskID(), test.TaskID)
+	assertEqual(t, trainingSet.TaskIDs(), test.TaskIDs)
 	assertEqual(t, trainingSet.JobID(), test.JobID)
 	assertEquivalentStrings(t, trainingSet.Triggers(), test.Triggers)
 	assertEquivalentNameVariants(t, trainingSet.Features(), test.Features)
@@ -1976,7 +1976,7 @@ func expectedTrainingSetVariants() ResourceTests {
 				{"feature", "variant2"},
 			},
 			Owner:    "Other",
-			TaskID:   15,
+			TaskIDs:  []int32{15},
 			JobID:    16,
 			Triggers: []string{"trigger1"},
 		},
@@ -1991,7 +1991,7 @@ func expectedTrainingSetVariants() ResourceTests {
 				{"feature", "variant2"},
 			},
 			Owner:    "Featureform",
-			TaskID:   17,
+			TaskIDs:  []int32{17},
 			JobID:    18,
 			Triggers: []string{"trigger3"},
 		},

@@ -248,7 +248,7 @@ type FeatureDef struct {
 	IsEmbedding bool
 	Definition  string
 	JobID       int32
-	TaskID      int32
+	TaskIDs     []int32
 	Triggers    []string
 }
 
@@ -311,7 +311,7 @@ func (def FeatureDef) Serialize() (*pb.FeatureVariant, error) {
 		Properties:  def.Properties.Serialize(),
 		Mode:        pb.ComputationMode(def.Mode),
 		JobId:       def.JobID,
-		TaskId:      def.TaskID,
+		TaskIds:     def.TaskIDs,
 		IsEmbedding: def.IsEmbedding,
 		Triggers:    def.Triggers,
 	}
@@ -419,7 +419,7 @@ type LabelDef struct {
 	Tags        Tags
 	Properties  Properties
 	JobID       int32
-	TaskID      int32
+	TaskIDs     []int32
 	Triggers    []string
 }
 
@@ -441,7 +441,7 @@ func (def LabelDef) Serialize() (*pb.LabelVariant, error) {
 		Tags:        &pb.Tags{Tag: def.Tags},
 		Properties:  def.Properties.Serialize(),
 		JobId:       def.JobID,
-		TaskId:      def.TaskID,
+		TaskIds:     def.TaskIDs,
 		Triggers:    def.Triggers,
 	}
 	switch x := def.Location.(type) {
@@ -570,7 +570,7 @@ type TrainingSetDef struct {
 	Tags        Tags
 	Properties  Properties
 	JobID       int32
-	TaskID      int32
+	TaskIDs     []int32
 	Triggers    []string
 }
 
@@ -592,7 +592,7 @@ func (def TrainingSetDef) Serialize() *pb.TrainingSetVariant {
 		Tags:        &pb.Tags{Tag: def.Tags},
 		Properties:  def.Properties.Serialize(),
 		JobId:       def.JobID,
-		TaskId:      def.TaskID,
+		TaskIds:     def.TaskIDs,
 		Triggers:    def.Triggers,
 	}
 }
@@ -708,7 +708,7 @@ type SourceDef struct {
 	Tags        Tags
 	Properties  Properties
 	JobID       int32
-	TaskID      int32
+	TaskIDs     []int32
 	Triggers    []string
 }
 
@@ -818,7 +818,7 @@ func (def SourceDef) Serialize() (*pb.SourceVariant, error) {
 		Tags:        &pb.Tags{Tag: def.Tags},
 		Properties:  def.Properties.Serialize(),
 		JobId:       def.JobID,
-		TaskId:      def.TaskID,
+		TaskIds:     def.TaskIDs,
 		Triggers:    def.Triggers,
 	}
 	var err error
@@ -1793,8 +1793,8 @@ func (variant *FeatureVariant) JobID() interface{} {
 	return variant.serialized.GetJobId()
 }
 
-func (variant *FeatureVariant) TaskID() interface{} {
-	return variant.serialized.GetTaskId()
+func (variant *FeatureVariant) TaskIDs() interface{} {
+	return variant.serialized.GetTaskIds()
 }
 
 type triggersGetter interface {
@@ -2192,8 +2192,8 @@ func (variant *LabelVariant) JobID() interface{} {
 	return variant.serialized.GetJobId()
 }
 
-func (variant *LabelVariant) TaskID() interface{} {
-	return variant.serialized.GetTaskId()
+func (variant *LabelVariant) TaskIDs() interface{} {
+	return variant.serialized.GetTaskIds()
 }
 
 type TrainingSet struct {
@@ -2314,8 +2314,8 @@ func (variant *TrainingSetVariant) JobID() interface{} {
 	return variant.serialized.GetJobId()
 }
 
-func (variant *TrainingSetVariant) TaskID() interface{} {
-	return variant.serialized.GetTaskId()
+func (variant *TrainingSetVariant) TaskIDs() interface{} {
+	return variant.serialized.GetTaskIds()
 }
 
 type Source struct {
@@ -2354,8 +2354,8 @@ func (variant *SourceVariant) JobID() interface{} {
 	return variant.serialized.GetJobId()
 }
 
-func (variant *SourceVariant) TaskID() interface{} {
-	return variant.serialized.GetTaskId()
+func (variant *SourceVariant) TaskIDs() interface{} {
+	return variant.serialized.GetTaskIds()
 }
 
 type Trigger struct {

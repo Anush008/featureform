@@ -1870,11 +1870,12 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.AddTriggerReq
 	trigger_jobIDs := triggerRecord.(*triggerResource).serialized.JobIds
 
 	// Add the trigger to the resource and resource to the trigger
+
 	switch r := resourceRecord.(type) {
 	case *featureVariantResource:
-		for _, tID := range trigger_taskIDs {
-			if tID == r.serialized.TaskId {
-				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
+		for _, tID := range r.serialized.TaskIds {
+			if !helpers.Contains(trigger_taskIDs, tID) {
+				triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, tID)
 			}
 		}
 		for _, jID := range trigger_jobIDs {
@@ -1882,14 +1883,12 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.AddTriggerReq
 				return nil, fmt.Errorf("jobID already exists in trigger: %d", jID)
 			}
 		}
-
-		triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, r.serialized.TaskId)
 		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
 		r.serialized.Triggers = append(r.serialized.Triggers, tr.Trigger.Name)
 	case *trainingSetVariantResource:
-		for _, tID := range trigger_taskIDs {
-			if tID == r.serialized.TaskId {
-				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
+		for _, tID := range r.serialized.TaskIds {
+			if !helpers.Contains(trigger_taskIDs, tID) {
+				triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, tID)
 			}
 		}
 		for _, jID := range trigger_jobIDs {
@@ -1897,14 +1896,12 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.AddTriggerReq
 				return nil, fmt.Errorf("jobID already exists in trigger: %d", jID)
 			}
 		}
-
-		triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, r.serialized.TaskId)
 		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
 		r.serialized.Triggers = append(r.serialized.Triggers, tr.Trigger.Name)
 	case *sourceVariantResource:
-		for _, tID := range trigger_taskIDs {
-			if tID == r.serialized.TaskId {
-				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
+		for _, tID := range r.serialized.TaskIds {
+			if !helpers.Contains(trigger_taskIDs, tID) {
+				triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, tID)
 			}
 		}
 		for _, jID := range trigger_jobIDs {
@@ -1912,14 +1909,12 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.AddTriggerReq
 				return nil, fmt.Errorf("jobID already exists in trigger: %d", jID)
 			}
 		}
-
-		triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, r.serialized.TaskId)
 		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
 		r.serialized.Triggers = append(r.serialized.Triggers, tr.Trigger.Name)
 	case *labelVariantResource:
-		for _, tID := range trigger_taskIDs {
-			if tID == r.serialized.TaskId {
-				return nil, fmt.Errorf("taskID already exists in trigger: %d", tID)
+		for _, tID := range r.serialized.TaskIds {
+			if !helpers.Contains(trigger_taskIDs, tID) {
+				triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, tID)
 			}
 		}
 		for _, jID := range trigger_jobIDs {
@@ -1927,8 +1922,6 @@ func (serv *MetadataServer) AddTrigger(ctx context.Context, tr *pb.AddTriggerReq
 				return nil, fmt.Errorf("jobID already exists in trigger: %d", jID)
 			}
 		}
-
-		triggerRecord.(*triggerResource).serialized.TaskIds = append(triggerRecord.(*triggerResource).serialized.TaskIds, r.serialized.TaskId)
 		triggerRecord.(*triggerResource).serialized.JobIds = append(triggerRecord.(*triggerResource).serialized.JobIds, r.serialized.JobId)
 		r.serialized.Triggers = append(r.serialized.Triggers, tr.Trigger.Name)
 
@@ -1979,7 +1972,7 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.RemoveTrig
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveItemsFromList(trigger_taskIDs, r.serialized.TaskIds)
 		if err != nil {
 			return nil, err
 		}
@@ -1992,7 +1985,7 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.RemoveTrig
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveItemsFromList(trigger_taskIDs, r.serialized.TaskIds)
 		if err != nil {
 			return nil, err
 		}
@@ -2005,7 +1998,7 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.RemoveTrig
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveItemsFromList(trigger_taskIDs, r.serialized.TaskIds)
 		if err != nil {
 			return nil, err
 		}
@@ -2018,7 +2011,7 @@ func (serv *MetadataServer) RemoveTrigger(ctx context.Context, tr *pb.RemoveTrig
 		if err != nil {
 			return nil, err
 		}
-		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveFromList(trigger_taskIDs, r.serialized.TaskId)
+		triggerRecord.(*triggerResource).serialized.TaskIds, err = helpers.RemoveItemsFromList(trigger_taskIDs, r.serialized.TaskIds)
 		if err != nil {
 			return nil, err
 		}
@@ -2241,23 +2234,23 @@ func (serv *MetadataServer) genericCreate(ctx context.Context, res Resource, ini
 
 	triggers := []string{}
 	jobid := int32(0)
-	taskid := int32(0)
+	taskids := []int32{}
 	switch res.ID().Type {
 	case FEATURE_VARIANT:
 		triggers = res.(*featureVariantResource).serialized.Triggers
-		taskid = res.(*featureVariantResource).serialized.TaskId
+		taskids = res.(*featureVariantResource).serialized.TaskIds
 		jobid = res.(*featureVariantResource).serialized.JobId
 	case LABEL_VARIANT:
 		triggers = res.(*labelVariantResource).serialized.Triggers
-		taskid = res.(*labelVariantResource).serialized.TaskId
+		taskids = res.(*labelVariantResource).serialized.TaskIds
 		jobid = res.(*labelVariantResource).serialized.JobId
 	case TRAINING_SET_VARIANT:
 		triggers = res.(*trainingSetVariantResource).serialized.Triggers
-		taskid = res.(*trainingSetVariantResource).serialized.TaskId
+		taskids = res.(*trainingSetVariantResource).serialized.TaskIds
 		jobid = res.(*trainingSetVariantResource).serialized.JobId
 	case SOURCE_VARIANT:
 		triggers = res.(*sourceVariantResource).serialized.Triggers
-		taskid = res.(*sourceVariantResource).serialized.TaskId
+		taskids = res.(*sourceVariantResource).serialized.TaskIds
 		jobid = res.(*sourceVariantResource).serialized.JobId
 	default:
 		break
@@ -2273,9 +2266,9 @@ func (serv *MetadataServer) genericCreate(ctx context.Context, res Resource, ini
 			if !ok {
 				return nil, fmt.Errorf("resource not of type trigger: %v", err)
 			}
-			for _, t := range assertedTrigger.serialized.TaskIds {
-				if t == taskid {
-					return nil, fmt.Errorf("taskID already exists in trigger: %d", taskid)
+			for _, t := range taskids {
+				if !helpers.Contains(assertedTrigger.serialized.TaskIds, t) {
+					assertedTrigger.serialized.TaskIds = append(assertedTrigger.serialized.TaskIds, t)
 				}
 			}
 			for _, j := range assertedTrigger.serialized.JobIds {
@@ -2283,7 +2276,6 @@ func (serv *MetadataServer) genericCreate(ctx context.Context, res Resource, ini
 					return nil, fmt.Errorf("jobID already exists in trigger: %d", jobid)
 				}
 			}
-			assertedTrigger.serialized.TaskIds = append(assertedTrigger.serialized.TaskIds, taskid)
 			assertedTrigger.serialized.JobIds = append(assertedTrigger.serialized.JobIds, jobid)
 			err = serv.lookup.Set(trigger.ID(), assertedTrigger)
 			if err != nil {

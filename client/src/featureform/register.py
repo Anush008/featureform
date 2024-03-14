@@ -1108,6 +1108,8 @@ class ColumnResource(ABC):
         self.tags = tags
         self.properties = properties
         self.variant = variant
+        self.task_ids=[]
+        self.job_id = 0
         self.triggers = [(t if isinstance(t, str) else t.name) for t in triggers]
 
     def register(self):
@@ -1136,7 +1138,7 @@ class ColumnResource(ABC):
                 "description": self.description,
                 "tags": self.tags,
                 "properties": self.properties,
-                "task_id": self.task_id,
+                "task_ids": self.task_ids,
                 "job_id": self.job_id,
                 "triggers": self.triggers,
             }
@@ -1679,7 +1681,7 @@ class Registrar:
                 description="",
                 tags=[],
                 properties={},
-                task_id=0,
+                task_ids=[],
                 job_id=0,
                 triggers=[],
             )
@@ -3326,8 +3328,6 @@ class Registrar:
         variant: str = "",
         owner: Union[str, UserRegistrar] = "",
         description: str = "",
-        task_id: int = 0,
-        job_id: int = 0,
         triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """Register a primary data source.
@@ -3361,8 +3361,8 @@ class Registrar:
             description=description,
             tags=tags,
             properties=properties,
-            task_id=task_id,
-            job_id=job_id,
+            task_ids=[],
+            job_id=0,
             triggers=triggers,
         )
         self.__resources.append(source)
@@ -3383,6 +3383,7 @@ class Registrar:
         inputs: Union[List[NameVariant], List[str], List[ColumnSourceRegistrar]] = None,
         tags: List[str] = [],
         properties: dict = {},
+        triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """Register a SQL transformation source.
 
@@ -3420,7 +3421,9 @@ class Registrar:
             description=description,
             tags=tags,
             properties=properties,
-            # TODO: Add task_id, job_id, trigger
+            task_ids=[],
+            job_id=0,
+            triggers=triggers,
         )
         self.__resources.append(source)
         return ColumnSourceRegistrar(self, source)
@@ -3492,6 +3495,7 @@ class Registrar:
         args: K8sArgs = None,
         tags: List[str] = [],
         properties: dict = {},
+        triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """Register a Dataframe transformation source.
 
@@ -3531,7 +3535,9 @@ class Registrar:
             description=description,
             tags=tags,
             properties=properties,
-            # TODO: Add task_id, job_id, trigger
+            task_ids=[],
+            job_id=0,
+            triggers=triggers,
         )
         self.__resources.append(source)
         return ColumnSourceRegistrar(self, source)
@@ -3902,7 +3908,7 @@ class Registrar:
                 tags=feature_tags,
                 properties=feature_properties,
                 additional_parameters=additional_Parameters,
-                task_id=feature["task_id"],
+                task_ids=feature["task_ids"],
                 job_id=feature["job_id"],
                 triggers=feature.get("triggers", []),
             )
@@ -3940,9 +3946,9 @@ class Registrar:
                     timestamp=timestamp_column,
                 ),
                 tags=label_tags,
-                task_id=label["task_id"],
-                job_id=label["job_id"],
                 properties=label_properties,
+                task_ids=label["task_ids"],
+                job_id=label["job_id"],
                 triggers=label.get("triggers", []),
             )
             self.__resources.append(resource)
@@ -4017,8 +4023,6 @@ class Registrar:
         schedule: str = "",
         tags: List[str] = [],
         properties: dict = {},
-        task_id: int = 0,
-        job_id: int = 0,
         triggers: Union[List[str], List[TriggerResource]] = [],
     ):
         """Register a training set.
@@ -4104,8 +4108,6 @@ class Registrar:
             feature_lags=feature_lags,
             tags=tags,
             properties=properties,
-            task_id=task_id,
-            job_id=job_id,
             triggers=triggers,
         )
         self.__resources.append(resource)
@@ -4453,7 +4455,7 @@ class ResourceClient:
             location=ResourceColumnMapping("", "", ""),
             description=feature.description,
             status=feature.status.Status._enum_type.values[feature.status.status].name,
-            task_id=feature.task_id,
+            task_ids=feature.task_ids,
             job_id=feature.job_id,
             triggers=feature.triggers,
         )
@@ -4575,7 +4577,7 @@ class ResourceClient:
             location=ResourceColumnMapping("", "", ""),
             description=label.description,
             status=label.status.Status._enum_type.values[label.status.status].name,
-            task_id=label.task_id,
+            task_ids=label.task_ids,
             job_id=label.job_id,
             triggers=label.triggers,
         )
@@ -4700,7 +4702,7 @@ class ResourceClient:
             # TODO: apply values from proto
             tags=[],
             properties={},
-            task_id=ts.task_id,
+            task_ids=ts.task_ids,
             job_id=ts.job_id,
             triggers=ts.triggers,
         )
@@ -4819,7 +4821,7 @@ class ResourceClient:
             source_text=(
                 definition.source_text if type(definition) == DFTransformation else ""
             ),
-            task_id=source.task_id,
+            task_ids=source.task_ids,
             job_id=source.job_id,
             triggers=source.triggers,
         )

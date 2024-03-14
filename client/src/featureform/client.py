@@ -255,7 +255,7 @@ class Client(ResourceClient, ServingClient):
             raise ValueError(f"Invalid resource type: {type(resource)}. Please use a tuple or resource object.")
         return req
 
-    def add_trigger(self, trigger, resource):
+    def add_trigger(self, trigger, resource: Union[str, TriggerResource]):
         """
         Add a trigger to a resource
 
@@ -277,7 +277,7 @@ class Client(ResourceClient, ServingClient):
 
         self._stub.AddTrigger(req)
     
-    def remove_trigger(self, trigger, resource):
+    def remove_trigger(self, trigger, resource: Union[str, TriggerResource]):
         """
         Remove a trigger from a resource
 

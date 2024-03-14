@@ -232,7 +232,7 @@ message FeatureVariant {
     bool is_embedding = 19;
     int32 dimension = 20;
     FeatureParameters additional_parameters = 21;
-    int32 task_id = 22;
+    repeated int32 task_ids = 22;
     int32 job_id = 23;
     repeated string triggers = 24;
 }
@@ -282,7 +282,7 @@ message LabelVariant {
     }
     Tags tags = 13;
     Properties properties = 14;
-    int32 task_id = 15;
+    repeated int32 task_ids = 15;
     int32 job_id = 16;
     repeated string triggers = 17;
 
@@ -326,7 +326,7 @@ message TrainingSetVariant {
     repeated FeatureLag feature_lags = 15;
     Tags tags = 16;
     Properties properties = 17;
-    int32 task_id = 18;
+    repeated int32 task_ids = 18;
     int32 job_id = 19;
     repeated string triggers = 20;
 }
@@ -390,7 +390,7 @@ message SourceVariant {
     string schedule = 16;
     Tags tags = 17;
     Properties properties = 18;
-    int32 task_id = 19;
+    repeated int32 task_ids = 19;
     int32 job_id = 20;
     repeated string triggers = 21;
 }
