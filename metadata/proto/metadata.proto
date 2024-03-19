@@ -456,13 +456,18 @@ message Trigger {
 	string name = 1;
 	oneof trigger_type {
 		ScheduleTrigger schedule_trigger = 2;
+        OtherTypeTrigger other_type_trigger = 3;
 	}
-	repeated int32 job_ids = 3;
-	repeated int32 task_ids = 4;
+	repeated int32 job_ids = 4;
+	repeated int32 task_ids = 5;
 }
 
 message ScheduleTrigger {
 	string schedule = 1;
+}
+
+message OtherTypeTrigger {
+    string some_info = 1;
 }
 
 message AddTriggerRequest {

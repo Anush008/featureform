@@ -1302,9 +1302,8 @@ ResourceLocation = ResourceColumnMapping
 class TriggerResource:
     name: str
     trigger_type: str
-    job_ids: list = field(default_factory=list)
-    task_ids: list = field(default_factory=list)
-    resources: list = field(default_factory=list)
+    job_ids: List[int] = field(default_factory=list)
+    task_ids: List[int] = field(default_factory=list)
 
     @staticmethod
     def operation_type() -> OperationType:
@@ -1313,22 +1312,66 @@ class TriggerResource:
     def type(self) -> str:
         return "trigger"
 
+class ScheduleTriggerResource(TriggerResource):
+    def __init__(self, name: str, schedule: str):
+        self.schedule = schedule
+        super().__init__(
+            name,
+            "SCHEDULE"
+        )
+
+    def to_dictionary(self):
+        return {
+            "name": self.name,
+            "schedule": self.schedule,
+            "trigger": "SCHEDULE",
+            "job_ids": self.job_ids,
+            "task_ids": self.task_ids,
+        }
+
     def _create(self, stub) -> None:
         serialized = pb.Trigger(
             name=self.name,
-            schedule_trigger=pb.ScheduleTrigger(schedule = self.trigger_type),
+            schedule_trigger=pb.ScheduleTrigger(schedule = self.schedule),
             job_ids=self.job_ids,
             task_ids=self.task_ids,
             )
         stub.CreateTrigger(serialized)
 
+    def update_schedule(self, schedule) -> None:
+        self.schedule = schedule
+
+
+@typechecked
+@dataclass
+class OtherTypeTriggerResource(TriggerResource):
+
+    def __init__(self, name: str, some_info: str):
+        self.some_info = some_info
+        super().__init__(
+            name,
+            "OTHERTYPE")
+
     def to_dictionary(self):
         return {
             "name": self.name,
-            "trigger": self.trigger_type,
+            "some_info": self.some_info,
+            "trigger": "OTHERTYPE",
             "job_ids": self.job_ids,
             "task_ids": self.task_ids,
         }
+
+    def _create(self, stub) -> None:
+        serialized = pb.Trigger(
+            name=self.name,
+            other_type_trigger=pb.OtherTypeTrigger(some_info = self.some_info),
+            job_ids=self.job_ids,
+            task_ids=self.task_ids,
+            )
+        stub.CreateTrigger(serialized)
+
+    def _update(self):
+        pass
 
 @typechecked
 @dataclass
@@ -1471,7 +1514,7 @@ class FeatureVariant(ResourceVariant):
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
             additional_parameters=None,
-            task_id=self.task_id,
+            task_ids=self.task_ids,
             job_id=self.job_id,
             triggers=self.triggers
         )
@@ -1604,7 +1647,7 @@ class LabelVariant(ResourceVariant):
     status: str = "NO_STATUS"
     error: Optional[str] = None
     server_status: Optional[ServerStatus] = None
-    task_id: int = 0
+    task_ids: List[int] = field(default_factory=list)
     job_id: int = 0
     triggers: List[str] = field(default_factory=list)
 
@@ -1642,7 +1685,7 @@ class LabelVariant(ResourceVariant):
             status=label.status.Status._enum_type.values[label.status.status].name,
             server_status=ServerStatus.from_proto(label.status),
             error=label.status.error_message,
-            task_id=label.task_id,
+            task_ids=label.task_ids,
             job_id=label.job_id,
             triggers=list(label.triggers),
         )
@@ -1665,7 +1708,7 @@ class LabelVariant(ResourceVariant):
             tags=pb.Tags(tag=self.tags),
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
-            task_id=self.task_id,
+            task_ids=self.task_ids,
             job_id=self.job_id,
             triggers=self.triggers
         )
@@ -1789,7 +1832,7 @@ class TrainingSetVariant(ResourceVariant):
     status: str = "NO_STATUS"
     error: Optional[str] = None
     server_status: Optional[ServerStatus] = None
-    task_id: int = 0
+    task_ids: List[str] = field(default_factory=list)
     job_id: int = 0
     triggers: List[str] = field(default_factory=list)
 
@@ -1844,7 +1887,7 @@ class TrainingSetVariant(ResourceVariant):
             properties={k: v for k, v in ts.properties.property.items()},
             error=ts.status.error_message,
             server_status=ServerStatus.from_proto(ts.status),
-            task_id=ts.task_id,
+            task_ids=ts.task_ids,
             job_id=ts.job_id,
             triggers=list(ts.triggers),
             )
@@ -1882,7 +1925,7 @@ class TrainingSetVariant(ResourceVariant):
             tags=pb.Tags(tag=self.tags),
             properties=Properties(self.properties).serialized,
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
-            task_id=self.task_id,
+            task_ids=self.task_ids,
             job_id=self.job_id,
             triggers=self.triggers,
         )
@@ -1945,7 +1988,8 @@ Resource = Union[
     EntityReference,
     Model,
     OnDemandFeatureVariant,
-    TriggerResource,
+    ScheduleTriggerResource,
+    OtherTypeTriggerResource,
 ]
 
 
@@ -1996,22 +2040,21 @@ class ResourceState:
     def sorted_list(self) -> List[Resource]:
         resource_order = {
             "user": 0,
-            "provider": 1,
-            "source": 2,
-            "entity": 3,
-            "feature": 4,
-            "ondemand_feature": 5,
-            "label": 6,
-            "training-set": 7,
-            "schedule": 8,
-            "model": 9,
-            "trigger": 10,
+            "trigger": 1,
+            "provider": 2,
+            "source": 3,
+            "entity": 4,
+            "feature": 5,
+            "ondemand_feature": 6,
+            "label": 7,
+            "training-set": 8,
+            "schedule": 9,
+            "model": 10,
         }
 
         def to_sort_key(res):
             resource_num = resource_order[res.type()]
             return resource_num
-
         return sorted(self.__state.values(), key=to_sort_key)
 
     def create_all_dryrun(self) -> None:

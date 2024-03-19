@@ -69,6 +69,7 @@ from .resources import (
     User,
     WeaviateConfig,
     TriggerResource,
+    ScheduleTriggerResource,
 )
 from .search import search
 from .status_display import display_statuses
@@ -3690,7 +3691,7 @@ class Registrar:
             return decorator(fn)
         
 
-    def _register_trigger(self, trigger_name, trigger_type):
+    def _register_schedule_trigger(self, trigger_name, trigger_args):
         """Register a trigger.
 
         Args:
@@ -3704,7 +3705,8 @@ class Registrar:
             raise ValueError("Trigger name must be a string")
         if trigger_name == "":
             raise ValueError("Trigger name cannot be empty")
-        trigger = TriggerResource(trigger_name, trigger_type)
+
+        trigger = ScheduleTriggerResource(trigger_name, trigger_args)
         self.__resources.append(trigger)
         return trigger
 
@@ -5583,7 +5585,7 @@ get_s3 = global_registrar.get_s3
 get_gcs = global_registrar.get_gcs
 ondemand_feature = global_registrar.ondemand_feature
 ResourceStatus = ResourceStatus
-ScheduleTrigger = global_registrar._register_trigger
+ScheduleTrigger = global_registrar._register_schedule_trigger
 
 Nil = ScalarType.NIL
 String = ScalarType.STRING

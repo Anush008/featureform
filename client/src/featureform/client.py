@@ -10,7 +10,9 @@ from .register import (
     TriggerResource,
     TrainingSetVariant,
     LabelColumnResource,
+    SourceVariant
 )
+from .resources import ScheduleTriggerResource, TriggerResource, OtherTypeTriggerResource
 from .serving import ServingClient
 from .enums import ResourceType
 from featureform.proto import metadata_pb2
@@ -247,7 +249,7 @@ class Client(ResourceClient, ServingClient):
             req.resource.name = resource[0]
             req.resource.variant = resource[1]
             req.resource_type = resource[2]
-        elif isinstance(resource, Union[FeatureColumnResource, TrainingSetVariant]):
+        elif isinstance(resource, Union[FeatureColumnResource, TrainingSetVariant, LabelColumnResource, SourceRegistrar]):
             req.resource.name = resource.name
             req.resource.variant = resource.variant
             req.resource_type = resource.resource_type
@@ -255,7 +257,7 @@ class Client(ResourceClient, ServingClient):
             raise ValueError(f"Invalid resource type: {type(resource)}. Please use a tuple or resource object.")
         return req
 
-    def add_trigger(self, trigger, resource: Union[str, TriggerResource]):
+    def add_trigger(self, trigger, resource):
         """
         Add a trigger to a resource
 
@@ -277,7 +279,7 @@ class Client(ResourceClient, ServingClient):
 
         self._stub.AddTrigger(req)
     
-    def remove_trigger(self, trigger, resource: Union[str, TriggerResource]):
+    def remove_trigger(self, trigger, resource):
         """
         Remove a trigger from a resource
 
@@ -311,6 +313,9 @@ class Client(ResourceClient, ServingClient):
             trigger_name (Union[str, TriggerResource]): The name of the trigger
             TODO: schedule (str): The new schedule for the trigger
         """
+        if not isinstance(schedule, ScheduleTriggerResource):
+            raise ValueError(f"Invalid schedule type: {type(schedule)}. Please use the ScheduleTrigger object.")
+        trigger.update_schedule(schedule)
         req = self._create_trigger_proto(trigger)
         schedule_req = metadata_pb2.ScheduleTrigger()
         schedule_req.schedule = schedule
@@ -332,6 +337,21 @@ class Client(ResourceClient, ServingClient):
         """
         req = self._create_trigger_proto(trigger)
         self._stub.DeleteTrigger(req)
+
+    def get_trigger(self, trigger):
+        """
+        Get a trigger from the storage provider
+
+        **Example:**
+        ```py title="definitions.py"
+        client.get_trigger("trigger_name")
+        ```
+
+        Args:
+            trigger_name (str): The name of the trigger
+        """
+        req = self._create_trigger_proto(trigger)
+        return self._stub.GetTrigger(req)
     
     @staticmethod
     def _validate_host(host):

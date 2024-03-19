@@ -1846,6 +1846,7 @@ func (serv *MetadataServer) GetEntities(stream pb.Metadata_GetEntitiesServer) er
 }
 
 func (serv *MetadataServer) CreateTrigger(ctx context.Context, trigger *pb.Trigger) (*pb.Empty, error) {
+	fmt.Println("Creating Trigger", trigger)
 	return serv.genericCreate(ctx, &triggerResource{trigger}, nil)
 }
 
