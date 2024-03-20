@@ -4,7 +4,7 @@ import stat
 import sys
 
 import featureform as ff
-from featureform import ResourceRedefinedError, InvalidSQLQuery
+from featureform import InvalidSQLQuery
 
 sys.path.insert(0, "client/src/")
 import pytest
@@ -17,7 +17,7 @@ from featureform.register import (
     Model,
 )
 
-from featureform.resources import TriggerResource, ScheduleTrigger
+from featureform.resources import ScheduleTriggerResource
 
 
 @pytest.mark.parametrize(
@@ -497,8 +497,5 @@ def test_register_blob_store(container_name, expected_error, ff_registrar):
 
 @pytest.mark.local
 def test_register_schedule_trigger():
-    result = ff.ScheduleTrigger(
-        name="name",
-        schedule="* * * * *",
-    )
-    assert isinstance(result, ScheduleTrigger)
+    result = ff.ScheduleTrigger("name", "* * * * *")
+    assert isinstance(result, ScheduleTriggerResource)
