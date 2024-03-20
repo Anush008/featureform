@@ -1008,6 +1008,7 @@ def test_add_all_resources_with_schedule(all_resources_strange_order, redis_conf
         ),
     ]
 
+
 # def test_register_trigger_resource():
 #     state = ResourceState()
 #     state.add(TriggerResource(name="trigger", variant="v1", schedule="* * * * *"))

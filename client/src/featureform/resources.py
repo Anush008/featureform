@@ -1185,7 +1185,7 @@ class SourceVariant(ResourceVariant):
             status=source.status.Status._enum_type.values[source.status.status].name,
             error=source.status.error_message,
             server_status=ServerStatus.from_proto(source.status),
-            task_ids=source.task_ids,
+            task_ids=list(source.task_ids),
             job_id=source.job_id,
             triggers=list(source.triggers),
         )
@@ -1297,6 +1297,7 @@ class ResourceColumnMapping:
 
 ResourceLocation = ResourceColumnMapping
 
+
 @typechecked
 @dataclass
 class TriggerResource:
@@ -1312,13 +1313,11 @@ class TriggerResource:
     def type(self) -> str:
         return "trigger"
 
+
 class ScheduleTriggerResource(TriggerResource):
     def __init__(self, name: str, schedule: str):
         self.schedule = schedule
-        super().__init__(
-            name,
-            "SCHEDULE"
-        )
+        super().__init__(name, "SCHEDULE")
 
     def to_dictionary(self):
         return {
@@ -1332,10 +1331,10 @@ class ScheduleTriggerResource(TriggerResource):
     def _create(self, stub) -> None:
         serialized = pb.Trigger(
             name=self.name,
-            schedule_trigger=pb.ScheduleTrigger(schedule = self.schedule),
+            schedule_trigger=pb.ScheduleTrigger(schedule=self.schedule),
             job_ids=self.job_ids,
             task_ids=self.task_ids,
-            )
+        )
         stub.CreateTrigger(serialized)
 
     def update_schedule(self, schedule) -> None:
@@ -1345,12 +1344,9 @@ class ScheduleTriggerResource(TriggerResource):
 @typechecked
 @dataclass
 class OtherTypeTriggerResource(TriggerResource):
-
     def __init__(self, name: str, some_info: str):
         self.some_info = some_info
-        super().__init__(
-            name,
-            "OTHERTYPE")
+        super().__init__(name, "OTHERTYPE")
 
     def to_dictionary(self):
         return {
@@ -1364,14 +1360,15 @@ class OtherTypeTriggerResource(TriggerResource):
     def _create(self, stub) -> None:
         serialized = pb.Trigger(
             name=self.name,
-            other_type_trigger=pb.OtherTypeTrigger(some_info = self.some_info),
+            other_type_trigger=pb.OtherTypeTrigger(some_info=self.some_info),
             job_ids=self.job_ids,
             task_ids=self.task_ids,
-            )
+        )
         stub.CreateTrigger(serialized)
 
     def _update(self):
         pass
+
 
 @typechecked
 @dataclass
@@ -1485,10 +1482,10 @@ class FeatureVariant(ResourceVariant):
             error=feature.status.error_message,
             server_status=ServerStatus.from_proto(feature.status),
             additional_parameters=None,
-            task_ids=feature.task_ids,
+            task_ids=list(feature.task_ids),
             job_id=feature.job_id,
             triggers=list(feature.triggers),
-            )
+        )
 
     def _create(self, stub) -> Optional[str]:
         if hasattr(self.source, "name_variant"):
@@ -1516,7 +1513,7 @@ class FeatureVariant(ResourceVariant):
             additional_parameters=None,
             task_ids=self.task_ids,
             job_id=self.job_id,
-            triggers=self.triggers
+            triggers=self.triggers,
         )
         _get_and_set_equivalent_variant(serialized, "feature_variant", stub)
         stub.CreateFeatureVariant(serialized)
@@ -1613,7 +1610,6 @@ class OnDemandFeatureVariant(ResourceVariant):
         return self.status == ResourceStatus.READY.value
 
 
-
 @typechecked
 @dataclass
 class Label:
@@ -1685,7 +1681,7 @@ class LabelVariant(ResourceVariant):
             status=label.status.Status._enum_type.values[label.status.status].name,
             server_status=ServerStatus.from_proto(label.status),
             error=label.status.error_message,
-            task_ids=label.task_ids,
+            task_ids=list(label.task_ids),
             job_id=label.job_id,
             triggers=list(label.triggers),
         )
@@ -1710,7 +1706,7 @@ class LabelVariant(ResourceVariant):
             status=pb.ResourceStatus(status=pb.ResourceStatus.NO_STATUS),
             task_ids=self.task_ids,
             job_id=self.job_id,
-            triggers=self.triggers
+            triggers=self.triggers,
         )
         _get_and_set_equivalent_variant(serialized, "label_variant", stub)
         stub.CreateLabelVariant(serialized)
@@ -1887,10 +1883,10 @@ class TrainingSetVariant(ResourceVariant):
             properties={k: v for k, v in ts.properties.property.items()},
             error=ts.status.error_message,
             server_status=ServerStatus.from_proto(ts.status),
-            task_ids=ts.task_ids,
+            task_ids=list(ts.task_ids),
             job_id=ts.job_id,
             triggers=list(ts.triggers),
-            )
+        )
 
     def _create(self, stub) -> Optional[str]:
         feature_lags = []
@@ -2055,6 +2051,7 @@ class ResourceState:
         def to_sort_key(res):
             resource_num = resource_order[res.type()]
             return resource_num
+
         return sorted(self.__state.values(), key=to_sort_key)
 
     def create_all_dryrun(self) -> None:
@@ -2098,6 +2095,7 @@ class ResourceState:
                     continue
 
                 raise e
+
 
 ## Executor Providers
 @typechecked

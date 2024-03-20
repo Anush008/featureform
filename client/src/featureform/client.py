@@ -10,9 +10,15 @@ from .register import (
     TriggerResource,
     TrainingSetVariant,
     LabelColumnResource,
-    SourceVariant
+    SourceVariant,
+    FeatureVariant,
+    LabelVariant,
 )
-from .resources import ScheduleTriggerResource, TriggerResource, OtherTypeTriggerResource
+from .resources import (
+    ScheduleTriggerResource,
+    TriggerResource,
+    OtherTypeTriggerResource,
+)
 from .serving import ServingClient
 from .enums import ResourceType
 from featureform.proto import metadata_pb2
@@ -229,7 +235,7 @@ class Client(ResourceClient, ServingClient):
                 "use client.columns(name, variant) or client.columns(source) or client.columns(transformation)"
             )
         return self.impl._get_source_columns(name, variant)
-    
+
     def _create_trigger_proto(self, trigger):
         req = metadata_pb2.Trigger()
         if isinstance(trigger, str):
@@ -237,24 +243,38 @@ class Client(ResourceClient, ServingClient):
         elif isinstance(trigger, TriggerResource):
             req.name = trigger.name
         else:
-            raise ValueError(f"Invalid trigger type: {type(trigger)}. Please use the trigger name or TriggerResource")
-        
+            raise ValueError(
+                f"Invalid trigger type: {type(trigger)}. Please use the trigger name or TriggerResource"
+            )
+
         return req
-    
+
     def _create_resource_proto(self, resource):
         req = metadata_pb2.ResourceID()
         if isinstance(resource, tuple):
             if len(resource) != 3:
-                raise ValueError(f"Invalid resource tuple: {resource}. resource tuple must have name, variant and type.")
+                raise ValueError(
+                    f"Invalid resource tuple: {resource}. resource tuple must have name, variant and type."
+                )
             req.resource.name = resource[0]
             req.resource.variant = resource[1]
             req.resource_type = resource[2]
-        elif isinstance(resource, Union[FeatureColumnResource, TrainingSetVariant, LabelColumnResource, SourceRegistrar]):
+        else:
+            if isinstance(resource, FeatureColumnResource):
+                req.resource_type = ResourceType.FEATURE.value
+            elif isinstance(resource, TrainingSetVariant):
+                req.resource_type = ResourceType.TRAINING_SET.value
+            elif isinstance(resource, SourceRegistrar):
+                req.resource_type = ResourceType.SOURCE.value
+            elif isinstance(resource, LabelColumnResource):
+                req.resource_type = ResourceType.LABEL.value
+
+            else:
+                raise ValueError(
+                    f"Invalid resource type: {type(resource)}. Please use a tuple or resource object."
+                )
             req.resource.name = resource.name
             req.resource.variant = resource.variant
-            req.resource_type = resource.resource_type
-        else:
-            raise ValueError(f"Invalid resource type: {type(resource)}. Please use a tuple or resource object.")
         return req
 
     def add_trigger(self, trigger, resource):
@@ -270,15 +290,16 @@ class Client(ResourceClient, ServingClient):
             trigger(Union[str, TriggerResource]): The name of the trigger
             resource(Union[tuple, FeatureColumnResource, TrainingSetVariant]): The name, variant and type of the resource
         """
-        
+
         req = metadata_pb2.AddTriggerRequest()
         trigger_req = self._create_trigger_proto(trigger)
         req.trigger.CopyFrom(trigger_req)
         resource_req = self._create_resource_proto(resource)
+        print("In add_trigger resource type is ", resource_req.resource_type)
         req.resource.CopyFrom(resource_req)
 
         self._stub.AddTrigger(req)
-    
+
     def remove_trigger(self, trigger, resource):
         """
         Remove a trigger from a resource
@@ -299,7 +320,7 @@ class Client(ResourceClient, ServingClient):
         req.resource.CopyFrom(resource_req)
 
         self._stub.RemoveTrigger(req)
-    
+
     def update_trigger(self, trigger, schedule):
         """
         Update the schedule of the trigger
@@ -314,7 +335,9 @@ class Client(ResourceClient, ServingClient):
             TODO: schedule (str): The new schedule for the trigger
         """
         if not isinstance(schedule, ScheduleTriggerResource):
-            raise ValueError(f"Invalid schedule type: {type(schedule)}. Please use the ScheduleTrigger object.")
+            raise ValueError(
+                f"Invalid schedule type: {type(schedule)}. Please use the ScheduleTrigger object."
+            )
         trigger.update_schedule(schedule)
         req = self._create_trigger_proto(trigger)
         schedule_req = metadata_pb2.ScheduleTrigger()
@@ -322,7 +345,7 @@ class Client(ResourceClient, ServingClient):
         req.schedule_trigger.CopyFrom(schedule_req)
 
         self._stub.CreateTrigger(req)
-    
+
     def delete_trigger(self, trigger):
         """
         Delete a trigger from the storage provider
@@ -352,7 +375,7 @@ class Client(ResourceClient, ServingClient):
         """
         req = self._create_trigger_proto(trigger)
         return self._stub.GetTrigger(req)
-    
+
     @staticmethod
     def _validate_host(host):
         if host.startswith("http://") or host.startswith("https://"):

@@ -1109,7 +1109,7 @@ class ColumnResource(ABC):
         self.tags = tags
         self.properties = properties
         self.variant = variant
-        self.task_ids=[]
+        self.task_ids = []
         self.job_id = 0
         self.triggers = [(t if isinstance(t, str) else t.name) for t in triggers]
 
@@ -3689,7 +3689,6 @@ class Registrar:
             return decorator
         else:
             return decorator(fn)
-        
 
     def _register_schedule_trigger(self, trigger_name, trigger_args):
         """Register a trigger.
@@ -3709,7 +3708,6 @@ class Registrar:
         trigger = ScheduleTriggerResource(trigger_name, trigger_args)
         self.__resources.append(trigger)
         return trigger
-
 
     def state(self):
         for resource in self.__resources:

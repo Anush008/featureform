@@ -17,6 +17,8 @@ from featureform.register import (
     Model,
 )
 
+from featureform.resources import TriggerResource, ScheduleTrigger
+
 
 @pytest.mark.parametrize(
     "account,organization,account_locator,should_error",
@@ -491,3 +493,12 @@ def test_register_blob_store(container_name, expected_error, ff_registrar):
         assert str(ve) == str(expected_error)
     except Exception as e:
         raise e
+
+
+@pytest.mark.local
+def test_register_schedule_trigger():
+    result = ff.ScheduleTrigger(
+        name="name",
+        schedule="* * * * *",
+    )
+    assert isinstance(result, ScheduleTrigger)
