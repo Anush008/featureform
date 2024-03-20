@@ -37,7 +37,7 @@ class MockStub:
 
 
 def test_add_trigger():
-    client = ff.Client()
+    client = ff.Client(host="localhost:7878", insecure=True)
     client._stub = MockStub()
     trigger = ff.ScheduleTrigger("trigger_name", "1 1 * * *")
     f = ("name", "variant", "FEATURE_VARIANT")
@@ -45,7 +45,7 @@ def test_add_trigger():
 
 
 def test_create_trigger_proto_trigger():
-    client = ff.Client()
+    client = ff.Client(host="localhost:7878", insecure=True)
     trigger = ff.ScheduleTrigger("trigger", "1 1 * * *")
     proto = client._create_trigger_proto(trigger)
     assert type(proto) == ff.metadata_pb2.Trigger
@@ -53,7 +53,7 @@ def test_create_trigger_proto_trigger():
 
 
 def test_create_trigger_proto_string():
-    client = ff.Client()
+    client = ff.Client(host="localhost:7878", insecure=True)
     trigger_name = "trigger_name"
     proto = client._create_trigger_proto(trigger_name)
     assert type(proto) == ff.metadata_pb2.Trigger
@@ -61,7 +61,7 @@ def test_create_trigger_proto_string():
 
 
 def test_create_trigger_proto_error():
-    client = ff.Client()
+    client = ff.Client(host="localhost:7878", insecure=True)
     not_a_trigger = ff.Feature(("name", "variant", "other_info"), ff.String)
     with pytest.raises(ValueError) as e:
         client._create_trigger_proto(not_a_trigger)
@@ -72,7 +72,7 @@ def test_create_trigger_proto_error():
 
 
 def test_create_resource_proto_tuple():
-    client = ff.Client()
+    client = ff.Client(host="localhost:7878", insecure=True)
     feature_id = ("name", "variant", "FEATURE_VARIANT")
     proto = client._create_resource_proto(feature_id)
     assert type(proto) == ff.metadata_pb2.ResourceID
@@ -88,7 +88,7 @@ class MockRegistrar:
 
 @mock.patch("featureform.register.Registrar", mock.MagicMock(side_effect=MockRegistrar))
 def test_create_resource_proto_feature():
-    client = ff.Client()
+    client = ff.Client(host="localhost:7878", insecure=True)
 
     # Arguments
     class User:
@@ -115,7 +115,7 @@ def test_create_resource_proto_feature():
 
 @mock.patch("featureform.register.Registrar", mock.MagicMock(side_effect=MockRegistrar))
 def test_create_resource_proto_label():
-    client = ff.Client()
+    client = ff.Client(host="localhost:7878", insecure=True)
 
     # Arguments
     class User:
