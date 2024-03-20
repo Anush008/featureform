@@ -3908,8 +3908,6 @@ class Registrar:
                 tags=feature_tags,
                 properties=feature_properties,
                 additional_parameters=additional_Parameters,
-                task_ids=feature["task_ids"],
-                job_id=feature["job_id"],
                 triggers=feature.get("triggers", []),
             )
             self.__resources.append(resource)
@@ -3947,8 +3945,6 @@ class Registrar:
                 ),
                 tags=label_tags,
                 properties=label_properties,
-                task_ids=label["task_ids"],
-                job_id=label["job_id"],
                 triggers=label.get("triggers", []),
             )
             self.__resources.append(resource)
