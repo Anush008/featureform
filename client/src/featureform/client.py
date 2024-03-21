@@ -10,14 +10,10 @@ from .register import (
     TriggerResource,
     TrainingSetVariant,
     LabelColumnResource,
-    SourceVariant,
-    FeatureVariant,
-    LabelVariant,
 )
 from .resources import (
     ScheduleTriggerResource,
     TriggerResource,
-    OtherTypeTriggerResource,
 )
 from .serving import ServingClient
 from .enums import ResourceType
@@ -271,7 +267,7 @@ class Client(ResourceClient, ServingClient):
 
             else:
                 raise ValueError(
-                    f"Invalid resource type: {type(resource)}. Please use a tuple or resource object."
+                    f"Invalid resource type: {type(resource)}. Resource must be a Feature, Training Set or Source."
                 )
             req.resource.name = resource.name
             req.resource.variant = resource.variant
@@ -334,9 +330,13 @@ class Client(ResourceClient, ServingClient):
             trigger_name (Union[str, TriggerResource]): The name of the trigger
             TODO: schedule (str): The new schedule for the trigger
         """
-        if not isinstance(schedule, ScheduleTriggerResource):
+        if not isinstance(trigger, ScheduleTriggerResource):
             raise ValueError(
                 f"Invalid schedule type: {type(schedule)}. Please use the ScheduleTrigger object."
+            )
+        if not isinstance(schedule, str):
+            raise ValueError(
+                f"Invalid schedule type: {type(schedule)}. Please use the string format for the schedule."
             )
         trigger.update_schedule(schedule)
         req = self._create_trigger_proto(trigger)
