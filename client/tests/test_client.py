@@ -38,9 +38,11 @@ class MockStub:
     def CreateTrigger(self, req):
         req = req
 
+
 class MockRegistrar:
     def __init__(self, *args, **kwargs):
         pass
+
 
 def test_trigger_operation():
     client = ff.Client(host="localhost:7878", insecure=True)
@@ -53,11 +55,14 @@ def test_trigger_operation():
     client.remove_trigger(trigger, f)
 
 
-@pytest.mark.parametrize("trigger_input, expected", [
-    (ff.ScheduleTrigger("trigger", "1 1 * * *"), "trigger"),
-    ("trigger_name", "trigger_name"),
-    (ff.Feature(("name", "variant", "other_info"), ff.String), None)
-])
+@pytest.mark.parametrize(
+    "trigger_input, expected",
+    [
+        (ff.ScheduleTrigger("trigger", "1 1 * * *"), "trigger"),
+        ("trigger_name", "trigger_name"),
+        (ff.Feature(("name", "variant", "other_info"), ff.String), None),
+    ],
+)
 def test_create_trigger_proto(trigger_input, expected):
     client = ff.Client(host="localhost:7878", insecure=True)
 
@@ -68,12 +73,16 @@ def test_create_trigger_proto(trigger_input, expected):
     else:
         with pytest.raises(ValueError) as e:
             client._create_trigger_proto(trigger_input)
-        assert str(e.value) == f"Invalid trigger type: {type(trigger_input)}. Please use the trigger name or TriggerResource"
+        assert (
+            str(e.value)
+            == f"Invalid trigger type: {type(trigger_input)}. Please use the trigger name or TriggerResource"
+        )
 
 
 @mock.patch("featureform.register.Registrar", mock.MagicMock(side_effect=MockRegistrar))
 def test_create_resource_proto_error():
     client = ff.Client(host="localhost:7878", insecure=True)
+
     class User:
         label_obj = ff.Label(
             (
@@ -93,19 +102,18 @@ def test_create_resource_proto_error():
     )
 
 
-
-@pytest.mark.parametrize("resource_input, expected", [
-    ("feature_obj", ("feature_obj", ResourceType.FEATURE.value)),
-    ("label_obj", ("label_obj", ResourceType.LABEL.value)),
-    ("ts_obj", ("ts_obj", ResourceType.TRAINING_SET.value)),
-    ("feature", ("feature_obj", ResourceType.FEATURE.value)),
-    ("label", ("label_obj", ResourceType.LABEL.value)),
-    ("ts", ("ts_obj", ResourceType.TRAINING_SET.value)),
-])
-
-@mock.patch(
-    "featureform.register.Registrar", mock.MagicMock(side_effect=MockRegistrar)
+@pytest.mark.parametrize(
+    "resource_input, expected",
+    [
+        ("feature_obj", ("feature_obj", ResourceType.FEATURE.value)),
+        ("label_obj", ("label_obj", ResourceType.LABEL.value)),
+        ("ts_obj", ("ts_obj", ResourceType.TRAINING_SET.value)),
+        ("feature", ("feature_obj", ResourceType.FEATURE.value)),
+        ("label", ("label_obj", ResourceType.LABEL.value)),
+        ("ts", ("ts_obj", ResourceType.TRAINING_SET.value)),
+    ],
 )
+@mock.patch("featureform.register.Registrar", mock.MagicMock(side_effect=MockRegistrar))
 def test_create_resource_proto(resource_input, expected):
     client = ff.Client(host="localhost:7878", insecure=True)
 
@@ -129,9 +137,15 @@ def test_create_resource_proto(resource_input, expected):
             variant="variant",
             type=ff.String,
         )
+
     User.feature_obj.name = "feature_obj"
     User.label_obj.name = "label_obj"
-    ts_obj = ff.register_training_set("ts_obj", "variant", features=[("feature_obj", "variant")], label=("label_obj", "variant"))
+    ts_obj = ff.register_training_set(
+        "ts_obj",
+        "variant",
+        features=[("feature_obj", "variant")],
+        label=("label_obj", "variant"),
+    )
 
     if resource_input == "feature":
         proto = client._create_resource_proto(User.feature_obj)
